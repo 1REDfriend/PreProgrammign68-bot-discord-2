@@ -17,7 +17,7 @@ class ComponentsHandler {
 
     load = () => {
         for (const directory of readdirSync('./src/components/')) {
-            for (const file of readdirSync('./src/components/' + directory).filter((f) => f.endsWith('.js'))) {
+            for (const file of readdirSync('./src/components/' + directory).filter((f) => f.endsWith('.js')).filter((f) => !f.startsWith("example"))) {
                 try {
                     /**
                      * @type {Component['data'] | AutocompleteComponent['data']}

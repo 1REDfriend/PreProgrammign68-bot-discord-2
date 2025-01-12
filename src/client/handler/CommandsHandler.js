@@ -17,7 +17,7 @@ class CommandsHandler {
     }
 
     load = () => {
-        for (const directory of readdirSync('./src/commands/')) {
+        for (const directory of readdirSync('./src/commands/').filter((f) => !f.startsWith("["))) {
             for (const file of readdirSync('./src/commands/' + directory).filter((f) => f.endsWith('.js'))) {
                 try {
                     /**

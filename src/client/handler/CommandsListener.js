@@ -4,7 +4,7 @@ const config = require("../../config");
 const MessageCommand = require("../../structure/MessageCommand");
 const { handleMessageCommandOptions, handleApplicationCommandOptions } = require("./CommandOptions");
 const ApplicationCommand = require("../../structure/ApplicationCommand");
-const { error } = require("../../utils/Console");
+const { error, info } = require("../../utils/Console");
 
 class CommandsListener {
     /**
@@ -74,6 +74,8 @@ class CommandsListener {
             const command = client.collection.application_commands.get(interaction.commandName);
 
             if (!command) return;
+
+            info(`${interaction.user.displayName} use /${command.command.name} on server [${interaction.guild.name}]`)
 
             try {
                 if (command.options) {

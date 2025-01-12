@@ -7,6 +7,7 @@ const ComponentsHandler = require("./handler/ComponentsHandler");
 const ComponentsListener = require("./handler/ComponentsListener");
 const EventsHandler = require("./handler/EventsHandler");
 const { QuickYAML } = require('quick-yaml.db');
+const { database_sqlite_setup } = require("../utils/Database");
 
 class DiscordBot extends Client {
     collection = {
@@ -69,6 +70,12 @@ class DiscordBot extends Client {
         warn(`Attempting to connect to the Discord bot... (${this.login_attempts + 1})`);
 
         this.login_timestamp = Date.now();
+
+        try {
+            database_sqlite_setup
+        } catch (e) {
+            error(`database fail to connect: ${e}`)
+        }
 
         try {
             await this.login(process.env.CLIENT_TOKEN);
