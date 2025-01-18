@@ -27,9 +27,7 @@ module.exports = new Component({
             )
 
             if (!ticketId) return
-
             try {
-
                 const messages = await interaction.channel.messages.fetch()
 
                 for (const [id, message] of messages) {
@@ -39,7 +37,7 @@ module.exports = new Component({
                             ) VALUES (?, ?, ?, ?, ?, ?)
                             `, [
                         message.id,
-                        ticketId,
+                        ticketId.ticket_id,
                         message.author.id,
                         message.author.username,
                         message.content || null,

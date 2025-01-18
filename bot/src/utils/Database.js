@@ -43,6 +43,20 @@ const database_sqlite_setup = (async () => {
                 )
             `)
 
+        await db.run(`
+            CREATE TABLE IF NOT EXISTS user_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                action TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                server_id TEXT NOT NULL,
+                channel_id TEXT,
+                status TEXT,
+                message_content TEXT
+                );
+            `)
+
         info('Ticket table created successfully.');
     } catch (e) {
         error('Failed to create table:', e.message);

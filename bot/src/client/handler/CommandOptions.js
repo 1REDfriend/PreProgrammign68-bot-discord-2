@@ -47,6 +47,32 @@ const handleApplicationCommandOptions = async (interaction, options, command) =>
         }
     }
 
+    if (options.adminOnly) {
+        if (!interaction.member.permissions.has('Administrator')) {
+            await interaction.reply({
+                content: config.messages.NOT_PERMISSIONS_ROLE,
+                ephemeral: true
+            });
+
+            return false;
+        }
+    }
+
+    if (options.permissions && Array.isArray(options.permissions)) {
+        const hasPermission = options.permissions.some(permission =>
+            interaction.member.permissions.has(permission)
+        );
+
+        if (!hasPermission) {
+            await interaction.reply({
+                content: config.messages.NOT_MODERATOR_ROLE,
+                ephemeral: true
+            });
+
+            return false;
+        }
+    }
+
     if (options.cooldown) {
         const cooldownFunction = () => {
             let data = application_commands_cooldown.get(interaction.user.id);

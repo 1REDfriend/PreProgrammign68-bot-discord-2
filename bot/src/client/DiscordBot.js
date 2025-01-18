@@ -8,6 +8,7 @@ const ComponentsListener = require("./handler/ComponentsListener");
 const EventsHandler = require("./handler/EventsHandler");
 const { QuickYAML } = require('quick-yaml.db');
 const { database_sqlite_setup } = require("../utils/Database");
+const TrackUserListener = require("./handler/TrackUserListener");
 
 class DiscordBot extends Client {
     collection = {
@@ -25,10 +26,12 @@ class DiscordBot extends Client {
     login_attempts = 0;
     login_timestamp = 0;
     statusMessages = [
-        { name: 'Status 1', type: 4 },
-        { name: 'Status 2', type: 4 },
-        { name: 'Status 3', type: 4 }
-    ];
+        { name: 'Pre', type: 4 },
+        { name: 'PrePro', type: 4 },
+        { name: 'PreProgramming', type: 4 },
+        { name: 'PreProgramming 68', type: 4 },
+        { name: 'PreProgramming 68', type: 4 },
+    ]
 
     commands_handler = new CommandsHandler(this);
     components_handler = new ComponentsHandler(this);
@@ -47,15 +50,16 @@ class DiscordBot extends Client {
             ],
             presence: {
                 activities: [{
-                    name: 'keep this empty',
+                    name: '',
                     type: 4,
-                    state: 'DiscordJS-V14-Bot-Template v3'
+                    state: 'Preprogramming 68'
                 }]
             }
         });
-        
+
         new CommandsListener(this);
         new ComponentsListener(this);
+        new TrackUserListener(this);
     }
 
     startStatusRotation = () => {

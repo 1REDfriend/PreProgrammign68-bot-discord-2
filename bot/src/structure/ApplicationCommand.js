@@ -5,7 +5,7 @@ class ApplicationCommand {
 
     /**
      *
-     * @param {{command: import("discord.js").APIApplicationCommand, options?: Partial<{ cooldown: number, botOwner: boolean, guildOwner: boolean, botDevelopers: boolean }>, run: import("discord.js").Awaitable<(client: DiscordBot, interaction: import('discord.js').Interaction) => void> }} structure 
+     * @param {{command: import("discord.js").APIApplicationCommand, options?: Partial<{ cooldown: number, botOwner: boolean, guildOwner: boolean, botDevelopers: boolean , adminOnly: boolean, permissions: string[]}>, run: import("discord.js").Awaitable<(client: DiscordBot, interaction: import('discord.js').Interaction) => void> }} structure 
      */
     constructor(structure) {
         this.data = {
