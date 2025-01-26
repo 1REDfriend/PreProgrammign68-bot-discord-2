@@ -18,7 +18,7 @@ export default function LoginPage() {
                 setError('Login failed. Please check your permissions and try again.');
             }
         } catch (err) {
-            setError('An unexpected error occurred. Please try again later.'+err);
+            setError('An unexpected error occurred. Please try again later.' + err);
         } finally {
             setIsLoading(false);
         }

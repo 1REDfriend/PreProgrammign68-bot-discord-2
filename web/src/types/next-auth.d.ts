@@ -3,12 +3,22 @@ import "next-auth";
 
 declare module "next-auth" {
   interface User {
-    id: string;
-    role?: string;
-    discordId?: string;
+    discordId?: string
+    role?: string
   }
 
   interface Session {
-    user: User;
+    user: {
+      id?: string
+      role?: string
+      discordId?: string
+    } & DefaultSession["user"]
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string
+    discordId?: string
   }
 }

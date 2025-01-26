@@ -3,12 +3,21 @@
 
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import { useEffect } from 'react'; // เพิ่ม useEffect
 
 export default function Dashboard() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession(); // ใช้ status เพื่อตรวจสอบสถานะ
 
-    if (!session?.user) {
-        redirect('/admin/login');
+    // ตรวจสอบเซสชันผ่าน useEffect (รันเฉพาะฝั่งไคลเอ็นต์)
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            redirect('/admin/login');
+        }
+    }, [status]);
+
+    // แสดง loading ถ้ายังไม่โหลดเสร็จ
+    if (status === 'loading' || !session?.user) {
+        return <div>Loading...</div>;
     }
 
     return (
@@ -22,12 +31,10 @@ export default function Dashboard() {
                     Welcome, {session.user.name}!
                 </h1>
 
-                {/* Admin Dashboard Content */}
                 <div className="bg-white p-6 rounded-xl shadow-lg border border-red-100">
                     <h2 className="text-xl font-semibold text-red-800 mb-4">
                         Server Statistics
                     </h2>
-                    {/* เพิ่มเนื้อหาดาต้าเบอร์ด */}
                 </div>
             </main>
         </div>
