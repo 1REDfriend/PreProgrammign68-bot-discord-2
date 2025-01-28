@@ -2,18 +2,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import Head from 'next/head';
+import { redirect } from 'next/navigation';
 
 export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { status } = useSession();
+    
+        useEffect(() => {
+            if (status === "authenticated") {
+                redirect('/admin/dashboard');
+            }
+        }, [status]);
 
     const handleLogin = async () => {
         setError(null);
         setIsLoading(true);
         try {
-            const result = await signIn('discord', { redirect: false });
+            const result = await signIn('discord', { callbackUrl: '/admin/dashboard' });
             if (result?.error) {
                 setError('Login failed. Please check your permissions and try again.');
             }

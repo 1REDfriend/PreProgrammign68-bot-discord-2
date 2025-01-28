@@ -1,10 +1,8 @@
 const { ChatInputCommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const DiscordBot = require("../../client/DiscordBot");
 const ApplicationCommand = require("../../structure/ApplicationCommand");
-const { QuickYAML } = require("quick-yaml.db");
 const config = require("../../config");
 const { info, error } = require("../../utils/Console");
-const database = new QuickYAML(config.database.path);
 
 module.exports = new ApplicationCommand({
     command: {
@@ -47,13 +45,9 @@ module.exports = new ApplicationCommand({
         const guildId = interaction.guildId;
         const userId = interaction.user.id;
 
-        database.set(`${guildId}.${userId}.email`, email);
-        if (database.get(`${guildId}.${userId}.email`)) {
-            info(database.get(`${guildId}.${userId}.email`) + "has been add on db.")
-        } else {
-            error(`${guildId}.${userId} add in db.`)
-            return interaction.reply({ embeds: [errorEmbed], flags: 64  });
-        }
+        // 
+        // code now?
+        // 
 
         const successEmbed = new EmbedBuilder()
             .setTitle('Verification Successful')

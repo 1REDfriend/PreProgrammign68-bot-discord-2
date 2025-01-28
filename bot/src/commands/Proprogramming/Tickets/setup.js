@@ -1,8 +1,8 @@
 const { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ChannelType, ChatInputCommandInteraction } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { info } = require("../../../utils/Console");
-const { run } = require("../../../client/handler/DatabaseHandler");
-const SQLite = require("../../../client/handler/DatabaseHandler");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient()
 
 /**
  * Subcommand handler for ticket setup
@@ -15,7 +15,6 @@ module.exports = async (client, interaction) => {
     const setChannel = interaction.options.getChannel('set_channel');
     const setCategory = interaction.options.getChannel('set_catagory');
     const setRole = interaction.options.getRole('set_role');
-    const db = new SQLite()
 
     if (!setChannel.isTextBased()) {
         return interaction.reply({
@@ -37,16 +36,23 @@ module.exports = async (client, interaction) => {
     const actionRow = new ActionRowBuilder().addComponents(button);
 
     try {
-        await db.run(`
-            INSERT OR REPLACE INTO tickets (guild_id, category_id, role_id, channel_id)
-            VALUES (?, ?, ?, ?)
-        `, [
-            interaction.guildId,    // Guild ID
-            setCategory.id, // Category ID
-            setRole.id,     // Role ID
-            setChannel.id   // Channel ID
-        ]);
+        // บันทึกข้อมูลลงในตาราง tickets ด้วย Prisma
+        await prisma.ticket.upsert({
+            where: { guild_id: interaction.guildId },
+            update: {
+                category_id: setCategory.id,
+                role_id: setRole.id,
+                channel_id: setChannel.id
+            },
+            create: {
+                guild_id: interaction.guildId,
+                category_id: setCategory.id,
+                role_id: setRole.id,
+                channel_id: setChannel.id
+            }
+        });
 
+        // ส่งข้อความใน channel ที่ตั้งค่า
         await setChannel.send({ embeds: [embed], components: [actionRow] });
 
         await interaction.reply({
@@ -61,5 +67,7 @@ module.exports = async (client, interaction) => {
             content: "An error occurred while setting up the ticket.",
             flags: 64
         });
+    } finally {
+        await prisma.$disconnect(); // ปิดการเชื่อมต่อ Prisma เมื่อทำงานเสร็จ
     }
 };

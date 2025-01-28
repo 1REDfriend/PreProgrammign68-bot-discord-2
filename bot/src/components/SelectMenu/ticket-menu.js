@@ -1,7 +1,7 @@
+const { PrismaClient } = require("@prisma/client");
 const DiscordBot = require("../../client/DiscordBot");
-const SQLite = require("../../client/handler/DatabaseHandler");
 const Component = require("../../structure/Component");
-const db = new SQLite()
+const prisma = new PrismaClient()
 
 module.exports = new Component({
     customId: 'select-ticket',
@@ -15,9 +15,16 @@ module.exports = new Component({
 
         const ticket_id = interaction.values[0];
 
-        const data = await db.all(`SELECT * FROM message_logs WHERE ticket_id = ?`, [
-            ticket_id
-        ])
+        const data = await prisma.messageLog.findMany({
+            where: { ticket_id },
+            select: {
+                message_id: true,
+                user_id: true,
+                username: true,
+                content: true,
+                created_at: true,
+            }
+        });
 
         if (data.length > 0) {
             const mappedData = data.map(entry => ({

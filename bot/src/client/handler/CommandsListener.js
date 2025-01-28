@@ -5,8 +5,6 @@ const MessageCommand = require("../../structure/MessageCommand");
 const { handleMessageCommandOptions, handleApplicationCommandOptions } = require("./CommandOptions");
 const ApplicationCommand = require("../../structure/ApplicationCommand");
 const { error, info } = require("../../utils/Console");
-const SQLite = require("./DatabaseHandler");
-const db = new SQLite()
 
 class CommandsListener {
     /**

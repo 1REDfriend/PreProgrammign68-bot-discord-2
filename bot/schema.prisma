@@ -1,0 +1,68 @@
+// schema.prisma
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Ticket {
+    guild_id    String  @id
+    category_id String?
+    role_id     String
+    channel_id  String
+
+    TicketLog TicketLog[]
+}
+
+model TicketLog {
+    logs_id     Int       @id @default(autoincrement())
+    ticket_id   String @unique
+    title       String
+    description String?
+    guild_id    String
+    user_id     String
+    created_by  String
+    channel_id  String
+    status      String    @default("open")
+    created_at  DateTime  @default(now())
+    closed_at   DateTime?
+
+    ticket Ticket @relation(fields: [guild_id], references: [guild_id], onDelete: Cascade)
+
+    MessageLog MessageLog[]
+}
+
+model MessageLog {
+    id          Int     @id @default(autoincrement())
+    message_id String
+    ticket_id  String
+    user_id    String
+    username   String
+    content    String?
+    created_at DateTime
+    fetch_at   DateTime @default(now())
+
+    ticket TicketLog @relation(fields: [ticket_id], references: [ticket_id], onDelete: Cascade)
+}
+
+model UserLog {
+    id              Int      @id @default(autoincrement())
+    user_id         String
+    username        String
+    action          String
+    timestamp       DateTime @default(now())
+    server_id       String
+    channel_id      String?
+    status          String?
+    message_content String?
+}
+
+model User {
+    id    Int    @id @default(autoincrement())
+    name  String
+    email String @unique
+    age   Int?
+}

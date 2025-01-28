@@ -72,7 +72,8 @@ class ComponentsHandler {
 
         const componentsCollection = this.client.collection.components;
 
-        success(`Successfully loaded ${componentsCollection.autocomplete.size + componentsCollection.buttons.size + componentsCollection.selects.size + componentsCollection.buttons.size} components.`);
+        success(`Successfully loaded ${componentsCollection.autocomplete.size + componentsCollection.buttons.size + componentsCollection.selects.size + componentsCollection.modals.size} components.`);
+
     }
 
     reload = () => {

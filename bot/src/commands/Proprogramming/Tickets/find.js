@@ -1,7 +1,7 @@
 const { ChatInputCommandInteraction, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
-const SQLite = require("../../../client/handler/DatabaseHandler");
-
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient()
 /**
  * Subcommand handler for ticket find
  * @param {DiscordBot} client 
@@ -11,12 +11,13 @@ module.exports = async (client, interaction) => {
     // ตัวอย่างการค้นหา Ticket
     const ticketId = interaction.options.getString('ticket_id');
     const user = interaction.options.getUser('who');
-    const db = new SQLite()
 
     if (ticketId) {
-        const data = await db.all(`SELECT * FROM message_logs WHERE ticket_id = ?`, [
-            ticketId
-        ])
+        const data = await prisma.ticketLog.findMany({
+            select: {
+                ticket_id: ticketId
+            }
+        })
 
         if (data.length > 0) {
             const mappedData = data.map(entry => ({
@@ -49,9 +50,11 @@ module.exports = async (client, interaction) => {
             });
         }
     } else if (user) {
-        const data = await db.all(`SELECT * FROM message_logs WHERE user_id = ?`, [
-            user.id
-        ]);
+        const data = await prisma.messageLog.findMany({
+            select: {
+                user_id: user.id
+            }
+        })
 
         if (data.length > 0) {
             const mappedData = data.map(entry => ({
@@ -85,12 +88,11 @@ module.exports = async (client, interaction) => {
             });
         }
     } else {
-        const data = await db.all(`
-            SELECT DISTINCT t.ticket_id, t.user_id
-            FROM ticket_logs t
-            WHERE t.guild_id = ?`, [
-            interaction.guildId
-        ]);
+        const data = await prisma.ticketLog.findMany({
+            where: { guild_id: interaction.guildId },
+            distinct: ['ticket_id', 'user_id'],
+            select: { ticket_id: true, user_id: true }
+        })
 
         if (data.length > 0) {
             const ticketOptions = await Promise.all(data.map(async entry => {

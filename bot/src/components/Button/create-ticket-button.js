@@ -1,8 +1,7 @@
-const { ButtonInteraction, Guild, PermissionsBitField, TextInputStyle, ModalBuilder, TextInputBuilder, ActionRowBuilder } = require("discord.js");
+// bot/src/components/Button/create-ticket-button.js
+const { ButtonInteraction, TextInputStyle, ModalBuilder, TextInputBuilder, ActionRowBuilder } = require("discord.js");
 const DiscordBot = require("../../client/DiscordBot");
 const Component = require("../../structure/Component");
-const SQLite = require("../../client/handler/DatabaseHandler");
-const { error, info, warn } = require("../../utils/Console");
 
 module.exports = new Component({
     customId: 'create_ticket',
@@ -42,4 +41,4 @@ module.exports = new Component({
 
         await interaction.showModal(modal);
     }
-}).toJSON();
+}).toJSON()

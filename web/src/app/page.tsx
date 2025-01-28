@@ -17,7 +17,7 @@ export default function Home() {
               <a href="#" className="text-red-700 hover:text-red-900 transition">Features</a>
               <a href="#" className="text-red-700 hover:text-red-900 transition">Documentation</a>
               <div className="flex space-x-4">
-                <Link href={'/loginadmin'} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition shadow-sm">
+                <Link href={'/admin/login'} className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition shadow-sm">
                   Admin Login
                 </Link>
                 <Link href={'#'} className="bg-white hover:bg-red-50 text-red-600 px-6 py-2 rounded-lg transition border border-red-200 shadow-sm">
