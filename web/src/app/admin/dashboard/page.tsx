@@ -1,14 +1,15 @@
 // app/admin/dashboard/page.tsx
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { FaChartBar, FaUsers, FaServer, FaCog } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaServer, FaCog, FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
 
 export default function Dashboard() {
     const { data: session, status } = useSession();
+    const [showDropdown, setShowDropdown] = useState(false);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -44,10 +45,30 @@ export default function Dashboard() {
                         <FaUsers className="w-5 h-5 mr-2" />
                         Manage Users
                     </button>
-                    <button className="text-red-700 hover:text-red-900 flex items-center">
-                        <FaCog className="w-5 h-5 mr-2" />
-                        Settings
-                    </button>
+
+                    {/* Dropdown Settings */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="text-red-700 hover:text-red-900 flex items-center"
+                        >
+                            <FaCog className="w-5 h-5 mr-2" />
+                            Settings
+                            <FaChevronDown className={`w-4 h-4 ml-2 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showDropdown && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-red-100">
+                                <button
+                                    onClick={() => signOut({ callbackUrl: '/admin/login' })}
+                                    className="w-full px-4 py-3 text-sm text-red-700 hover:bg-red-50 flex items-center"
+                                >
+                                    <FaSignOutAlt className="w-4 h-4 mr-2" />
+                                    Logout
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </nav>
 

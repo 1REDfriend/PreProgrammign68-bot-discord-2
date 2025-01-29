@@ -34,6 +34,7 @@ class TrackUserListener {
 
         // ตรวจจับการเปลี่ยนสถานะออนไลน์
         client.on("presenceUpdate", async (oldPresence, newPresence) => {
+            if (newPresence.user.bot) return;
             const user = newPresence.user || oldPresence.user;
             const status = newPresence.status || "offline";
 

@@ -36,7 +36,8 @@ model TicketLog {
 }
 
 model MessageLog {
-    message_id Int      @id @default(autoincrement())
+    id          Int     @id @default(autoincrement())
+    message_id String
     ticket_id  String
     user_id    String
     username   String

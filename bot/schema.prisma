@@ -8,6 +8,13 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model BotAlive {
+    id          Int         @id @default(autoincrement())
+    name        String
+    client_id   String      @unique
+    create_at   DateTime    @default(now())
+}
+
 model Ticket {
     guild_id    String  @id
     category_id String?
