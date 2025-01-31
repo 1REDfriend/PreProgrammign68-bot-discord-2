@@ -8,18 +8,26 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model BotAlive {
+    id          Int         @id @default(autoincrement())
+    name        String
+    client_id   String
+    create_at   DateTime    @default(now())
+}
+
 model Ticket {
     guild_id    String  @id
     category_id String?
     role_id     String
     channel_id  String
+    expire_time Int
 
     TicketLog TicketLog[]
 }
 
 model TicketLog {
     logs_id     Int       @id @default(autoincrement())
-    ticket_id   String @unique
+    ticket_id   String    @unique
     title       String
     description String?
     guild_id    String
@@ -29,6 +37,7 @@ model TicketLog {
     status      String    @default("open")
     created_at  DateTime  @default(now())
     closed_at   DateTime?
+    change_at   DateTime?
 
     ticket Ticket @relation(fields: [guild_id], references: [guild_id], onDelete: Cascade)
 
