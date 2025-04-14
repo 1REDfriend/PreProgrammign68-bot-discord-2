@@ -15,7 +15,6 @@ module.exports = new ApplicationCommand({
                 name: "normal",
                 description: 'send normal message to channel.',
                 type: ApplicationCommandOptionType.Subcommand,
-                required: true,
                 options: [
                     {
                         name: "message",
@@ -25,6 +24,7 @@ module.exports = new ApplicationCommand({
                     },
                     {
                         name: "channel",
+                        description: "Channel to send the message to",
                         type: ApplicationCommandOptionType.Channel,
                         required: false
                     },
@@ -40,20 +40,22 @@ module.exports = new ApplicationCommand({
                 name: "embeds",
                 description: "Create a embeds message.",
                 type: ApplicationCommandOptionType.Subcommand,
-                required: true,
                 options: [
                     {
                         name: 'title',
+                        description: "Title for the embed message",
                         type: ApplicationCommandOptionType.String,
                         required: true,
                     },
                     {
                         name: 'description',
+                        description: "Description for the embed message",
                         type: ApplicationCommandOptionType.String,
                         required: false
                     },
                     {
                         name: "channel",
+                        description: "Channel to send the embed message to",
                         type: ApplicationCommandOptionType.Channel,
                         required: false
                     },

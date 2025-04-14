@@ -1,5 +1,5 @@
 const { REST, Routes } = require('discord.js');
-const { info, error, success } = require('../../utils/Console');
+const { info, error, success, warn } = require('../../utils/Console');
 const { readdirSync } = require('fs');
 const DiscordBot = require('../DiscordBot');
 const ApplicationCommand = require('../../structure/ApplicationCommand');
@@ -71,6 +71,44 @@ class CommandsHandler {
         this.client.rest_application_commands_array = [];
 
         this.load();
+    }
+    
+    /**
+     * Deletes all application commands from a guild or globally
+     * @param {{ enabled: boolean, guildId: string }} development
+     * @param {Partial<import('discord.js').RESTOptions>} restOptions 
+     */
+    deleteApplicationCommands = async (development, restOptions = null) => {
+        const rest = new REST(restOptions ? restOptions : { version: '10' }).setToken(this.client.token);
+        
+        try {
+            warn('Attempting to delete all existing application commands...');
+            
+            if (development.enabled) {
+                // Delete commands from specific guild
+                await rest.put(Routes.applicationGuildCommands(this.client.user.id, development.guildId), { body: [] });
+                success(`Successfully deleted all application commands from guild ${development.guildId}`);
+            } else {
+                // Get all guilds the bot is in
+                const guilds = this.client.guilds.cache;
+                
+                // Delete global commands
+                await rest.put(Routes.applicationCommands(this.client.user.id), { body: [] });
+                success('Successfully deleted all global application commands');
+                
+                // Delete commands from each guild
+                for (const [guildId, guild] of guilds) {
+                    try {
+                        await rest.put(Routes.applicationGuildCommands(this.client.user.id, guildId), { body: [] });
+                        success(`Successfully deleted all application commands from guild ${guildId} (${guild.name})`);
+                    } catch (err) {
+                        error(`Failed to delete application commands from guild ${guildId}: ${err.message}`);
+                    }
+                }
+            }
+        } catch (err) {
+            error(`Failed to delete application commands: ${err.message}`);
+        }
     }
     
     /**

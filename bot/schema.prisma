@@ -73,3 +73,11 @@ model User {
     email String @unique
     age   Int?
 }
+
+model AutoCreateRoom {
+    guild_id    String  @id
+    wait_channel_id String
+    create_category_id String
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+}

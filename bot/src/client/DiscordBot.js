@@ -81,12 +81,19 @@ class DiscordBot extends Client {
 
         try {
             await this.login(process.env.CLIENT_TOKEN);
+            this.application.commands.cache.set([]);
+
             this.commands_handler.load();
             this.components_handler.load();
             this.events_handler.load();
             this.startStatusRotation();
 
+            warn('Attempting to delete existing application commands...');
+            await this.commands_handler.deleteApplicationCommands(config.development);
+            success('Successfully deleted existing application commands');
+
             warn('Attempting to register application commands... (this might take a while!)');
+
             await this.commands_handler.registerApplicationCommands(config.development);
             success('Successfully registered application commands. For specific guild? ' + (config.development.enabled ? 'Yes' : 'No'));
         } catch (err) {

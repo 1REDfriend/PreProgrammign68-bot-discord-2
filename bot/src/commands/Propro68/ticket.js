@@ -59,11 +59,13 @@ module.exports = new ApplicationCommand({
                         name: 'ticket_id',
                         description: 'ID of the ticket to find.',
                         type: ApplicationCommandOptionType.String,
+                        required: false
                     },
                     {
                         name: 'who',
-                        description: 'find by username of user.',
+                        description: 'Find by username of user.',
                         type: ApplicationCommandOptionType.User,
+                        required: false
                     },
                 ]
             }
