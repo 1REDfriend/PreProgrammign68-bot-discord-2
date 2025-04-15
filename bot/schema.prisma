@@ -81,3 +81,29 @@ model AutoCreateRoom {
     created_at  DateTime @default(now())
     updated_at  DateTime @updatedAt
 }
+
+model PrivateRoom {
+    guild_id    String  @id
+    channel_id  String
+    category_id String
+    role_id     String
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+
+    PrivateRoomChannel PrivateRoomChannel[]
+}
+
+model PrivateRoomChannel {
+    id          Int      @id @default(autoincrement())
+    channel_id  String   @unique
+    guild_id    String
+    created_by  String
+    name        String
+    description String?
+    type        String
+    role_id     String?
+    created_at  DateTime @default(now())
+    deleted_at  DateTime?
+
+    private_room PrivateRoom @relation(fields: [guild_id], references: [guild_id], onDelete: Cascade)
+}

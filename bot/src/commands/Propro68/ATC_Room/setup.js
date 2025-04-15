@@ -61,18 +61,14 @@ async function setupAutoCreateRoom(client, interaction) {
             });
         }
 
-        // Set up client for voice state listener if not already set up
-        if (!client.autoCreateRoomSetup) {
-            client.autoCreateRoomSetup = true;
-            setupVoiceStateListener(client);
-        }
-
         // Create success embed
         const successEmbed = new EmbedBuilder()
             .setTitle('✅ ตั้งค่าสำเร็จ')
             .setDescription(`ได้ตั้งค่าระบบสร้างห้องอัตโนมัติเรียบร้อยแล้ว
 ช่องรอ: ${waitChannel}
-หมวดหมู่: ${createCategory}`)
+หมวดหมู่: ${createCategory}
+
+ระบบจะเริ่มทำงานทันที ผู้ใช้ที่เข้ามาในช่องรอจะถูกย้ายไปยังห้องที่สร้างใหม่โดยอัตโนมัติ`)
             .setColor('#00FF00')
             .setTimestamp();
 
@@ -89,73 +85,6 @@ async function setupAutoCreateRoom(client, interaction) {
             ephemeral: true
         });
     }
-}
-
-/**
- * Setup voice state listener for auto room creation
- * @param {DiscordBot} client 
- */
-function setupVoiceStateListener(client) {
-    client.on('voiceStateUpdate', async (oldState, newState) => {
-        try {
-            // If user is not a bot and joined a new channel
-            if (newState.member.user.bot) return;
-            
-            if (!oldState.channel && newState.channel) {
-                // User joined a voice channel
-                const guildSetup = await prisma.autoCreateRoom.findUnique({
-                    where: {
-                        guild_id: newState.guild.id
-                    }
-                });
-
-                if (!guildSetup) return; // No setup for this guild
-                
-                // Check if the channel is the wait channel
-                if (newState.channel.id === guildSetup.wait_channel_id) {
-                    // Create a new voice channel for the user
-                    const username = newState.member.displayName || newState.member.user.username;
-                    const newChannel = await newState.guild.channels.create({
-                        name: `🔊 ${username}`,
-                        type: ChannelType.GuildVoice,
-                        parent: guildSetup.create_category_id,
-                        permissionOverwrites: [
-                            {
-                                id: newState.member.id,
-                                allow: ['ManageChannels', 'Connect', 'Speak', 'Stream', 'UseVAD']
-                            }
-                        ]
-                    });
-                    
-                    // Move user to the new channel
-                    await newState.member.voice.setChannel(newChannel);
-                }
-            } else if (oldState.channel && (!newState.channel || newState.channel.id !== oldState.channel.id)) {
-                // User left a voice channel or switched channels
-                
-                // Check if the old channel is empty and not the wait channel
-                const guildSetup = await prisma.autoCreateRoom.findUnique({
-                    where: {
-                        guild_id: oldState.guild.id
-                    }
-                });
-                
-                if (!guildSetup) return; // No setup for this guild
-                
-                // Don't delete the wait channel
-                if (oldState.channel.id === guildSetup.wait_channel_id) return;
-                
-                // Check if channel is in the correct category and empty
-                if (oldState.channel.parentId === guildSetup.create_category_id && 
-                    oldState.channel.members.size === 0) {
-                    // Delete the empty channel
-                    await oldState.channel.delete();
-                }
-            }
-        } catch (error) {
-            console.error('Error in voice state listener:', error);
-        }
-    });
 }
 
 module.exports = { setupAutoCreateRoom }; 
