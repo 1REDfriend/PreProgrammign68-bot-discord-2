@@ -107,3 +107,37 @@ model PrivateRoomChannel {
 
     private_room PrivateRoom @relation(fields: [guild_id], references: [guild_id], onDelete: Cascade)
 }
+
+model serverSettings {
+    guildId           String    @id
+    verifyRoleId      String?
+    verifyLogChannelId String?
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+
+    userVerifications userVerification[]
+}
+
+model userVerification {
+    userId        String
+    guildId       String
+    status        String      // pending, verified, rejected
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+    verifiedAt    DateTime?
+
+    server serverSettings @relation(fields: [guildId], references: [guildId], onDelete: Cascade)
+
+    @@id([userId, guildId])
+}
+
+model memberRequest {
+    memberId    String
+    guildId     String
+    status      String      // pending, approved, rejected, cancel
+    requestData String?     // JSON string ข้อมูลเพิ่มเติม
+    requestedAt DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt @default(now())
+
+    @@id([memberId, guildId])
+}

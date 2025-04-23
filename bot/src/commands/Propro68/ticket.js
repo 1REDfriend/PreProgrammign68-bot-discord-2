@@ -72,7 +72,7 @@ module.exports = new ApplicationCommand({
         ]
     },
     options: [{
-        cooldown: 5000
+        adminOnly: true
     }],
     /**
      * 

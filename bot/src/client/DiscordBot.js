@@ -1,13 +1,17 @@
 const { Client, Collection, Partials } = require("discord.js");
-const CommandsHandler = require("./handler/CommandsHandler");
+const { database_sqlite_setup } = require("../utils/Database");
+
 const { warn, error, info, success } = require("../utils/Console");
 const config = require("../config");
+
+const CommandsHandler = require("./handler/CommandsHandler");
 const CommandsListener = require("./handler/CommandsListener");
 const ComponentsHandler = require("./handler/ComponentsHandler");
 const ComponentsListener = require("./handler/ComponentsListener");
 const EventsHandler = require("./handler/EventsHandler");
-const { database_sqlite_setup } = require("../utils/Database");
 const TrackUserListener = require("./handler/TrackUserListener");
+const MemberApprovalHandler = require("./handler/MemberApprovalHandler");
+const MemberApprovalListener = require("./handler/MemberApprovalListener");
 
 class DiscordBot extends Client {
     collection = {
@@ -35,6 +39,7 @@ class DiscordBot extends Client {
     commands_handler = new CommandsHandler(this);
     components_handler = new ComponentsHandler(this);
     events_handler = new EventsHandler(this);
+    memberApprovalHandler = new MemberApprovalHandler(this);
 
     constructor() {
         super({
@@ -58,6 +63,7 @@ class DiscordBot extends Client {
         new CommandsListener(this);
         new ComponentsListener(this);
         new TrackUserListener(this);
+        new MemberApprovalListener(this);
     }
 
     startStatusRotation = () => {
@@ -90,6 +96,7 @@ class DiscordBot extends Client {
             this.components_handler.load();
             this.events_handler.load();
             this.startStatusRotation();
+            this.memberApprovalHandler.load();
 
             warn('Attempting to register application commands... (this might take a while!)');
             await this.commands_handler.registerApplicationCommands(config.development);

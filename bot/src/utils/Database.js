@@ -13,4 +13,4 @@ const database_prisma_setup = async () => {
     }
 };
 
-module.exports = { database_prisma_setup };
+module.exports = { database_prisma_setup, prisma };

@@ -1,8 +1,9 @@
 const { ChatInputCommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const DiscordBot = require("../../client/DiscordBot");
 const ApplicationCommand = require("../../structure/ApplicationCommand");
-const config = require("../../config");
-const { info, error } = require("../../utils/Console");
+
+const setupHandler = require("./Verifly/setup");
+const preprogrammingHandler = require("./Verifly/preprogramming");
 
 module.exports = new ApplicationCommand({
     command: {
@@ -11,52 +12,55 @@ module.exports = new ApplicationCommand({
         type: 1,
         options: [
             {
-                name: 'email',
-                description: 'Your KMITL email.',
-                type: ApplicationCommandOptionType.String,
-                required: true
+                name: 'setup',
+                description: 'ตั้งค่าระบบยืนยันตัวตน (สำหรับแอดมิน)',
+                type: ApplicationCommandOptionType.Subcommand,
+                options: [
+                    {
+                        name: 'role',
+                        description: 'บทบาทที่จะให้หลังจากการยืนยันตัวตน',
+                        type: ApplicationCommandOptionType.Role,
+                        required: true
+                    },
+                    {
+                        name: 'log_channel',
+                        description: 'ช่องสำหรับส่งบันทึกการยืนยันตัวตน',
+                        type: ApplicationCommandOptionType.Channel,
+                        required: false
+                    }
+                ]
             },
+            {
+                name: 'preprogramming',
+                description: 'ยืนยันตัวตนกับ PreProgramming 68',
+                type: ApplicationCommandOptionType.Subcommand
+            }
         ],
     },
-    options: [{ cooldown: 5000 }],
+    options: [{
+        cooldown: 5000
+    }],
     /**
      *
      * @param {DiscordBot} client
      * @param {ChatInputCommandInteraction} interaction
      */
     run: async (client, interaction) => {
-        const email = interaction.options.getString('email');
+        const subcommand = interaction.options.getSubcommand();
 
-        if (!email.endsWith("@kmitl.ac.th")) {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('Error')
-                .setDescription('Please provide a valid KMITL email.')
-                .setColor(0xFF0000)
-                .setFooter({ text: 'Verification Error' })
+        if (subcommand === 'setup') {
+            return setupHandler(client, interaction);
+        } else if (subcommand === 'preprogramming') {
+            return preprogrammingHandler(client, interaction);
+        } else {
+            const helpEmbed = new EmbedBuilder()
+                .setTitle('คำสั่งยืนยันตัวตน')
+                .setDescription('เลือกใช้คำสั่งย่อย `/verifly preprogramming` เพื่อยืนยันตัวตนกับ PreProgramming 68')
+                .setColor(0x3498DB)
+                .setFooter({ text: 'Verification Help' })
                 .setTimestamp();
-            return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            
+            return interaction.reply({ embeds: [helpEmbed], ephemeral: true });
         }
-
-        if (!database) {
-            console.error('Failed to initialize QuickYAML database.');
-            return interaction.reply({ content: 'Database error.', flags: 64  });
-        }
-
-        const guildId = interaction.guildId;
-        const userId = interaction.user.id;
-
-        // 
-        // code now?
-        // 
-
-        const successEmbed = new EmbedBuilder()
-            .setTitle('Verification Successful')
-            .setDescription(`Email **${email}** has been verified successfully!`)
-            .setColor(0x00FF00)
-            .setFooter({ text: 'Verification Complete' })
-            .setThumbnail(interaction.user.displayAvatarURL())
-            .setTimestamp();
-
-        return interaction.reply({ embeds: [successEmbed], flags: 64 });
     }
 }).toJSON();
