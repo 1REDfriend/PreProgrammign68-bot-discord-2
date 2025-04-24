@@ -109,41 +109,42 @@ module.exports = async (client, interaction) => {
         const userData = await response.data.camper[0].user;
         if (userData && userData.nickname && userData.firstName) {
             const newNickname = `${userData.nickname} ${userData.firstName}`;
+
+            // แจ้งผลสำเร็จให้ผู้ใช้
+            const successEmbed = new EmbedBuilder()
+                .setTitle('ยืนยันตัวตนสำเร็จ')
+                .setDescription('การยืนยันตัวตนเสร็จสมบูรณ์แล้ว')
+                .setColor(0x00FF00)
+                .setFooter({ text: 'Verification Complete' })
+                .setThumbnail(interaction.user.displayAvatarURL())
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [successEmbed] });
+
+            // ส่ง logs ไปยัง channel ที่กำหนด (ถ้ามี)
+            if (serverSettings.verifyLogChannelId) {
+                const logChannel = interaction.guild.channels.cache.get(serverSettings.verifyLogChannelId);
+                if (logChannel) {
+                    const logEmbed = new EmbedBuilder()
+                        .setTitle('การยืนยันตัวตนสำเร็จ')
+                        .setDescription(`ผู้ใช้ **${interaction.user.username}** ได้รับการยืนยันตัวตนเรียบร้อยแล้ว`)
+                        .addFields(
+                            { name: 'ผู้ใช้', value: `<@${interaction.user.id}>`, inline: true },
+                            { name: 'ไอดีผู้ใช้', value: interaction.user.id, inline: true },
+                            { name: 'ชื่อในระบบ', value: newNickname, inline: true },
+                            { name: 'เวลา', value: new Date().toLocaleString('th-TH'), inline: false }
+                        )
+                        .setColor(0x00FF00)
+                        .setThumbnail(interaction.user.displayAvatarURL())
+                        .setFooter({ text: 'Verification Logs' })
+                        .setTimestamp();
+
+                    await logChannel.send({ embeds: [logEmbed] });
+                }
+            }
+
             await interaction.member.setNickname(newNickname);
         } else throw new Error('เกิดข้อผิดพลาดที่ระบบ ไม่พบข้อมูลชื่อโปรไฟล์จาก API');
-
-        // แจ้งผลสำเร็จให้ผู้ใช้
-        const successEmbed = new EmbedBuilder()
-            .setTitle('ยืนยันตัวตนสำเร็จ')
-            .setDescription('การยืนยันตัวตนเสร็จสมบูรณ์แล้ว')
-            .setColor(0x00FF00)
-            .setFooter({ text: 'Verification Complete' })
-            .setThumbnail(interaction.user.displayAvatarURL())
-            .setTimestamp();
-
-        await interaction.editReply({ embeds: [successEmbed] });
-
-        // ส่ง logs ไปยัง channel ที่กำหนด (ถ้ามี)
-        if (serverSettings.verifyLogChannelId) {
-            const logChannel = interaction.guild.channels.cache.get(serverSettings.verifyLogChannelId);
-            if (logChannel) {
-                const logEmbed = new EmbedBuilder()
-                    .setTitle('การยืนยันตัวตนสำเร็จ')
-                    .setDescription(`ผู้ใช้ **${interaction.user.username}** ได้รับการยืนยันตัวตนเรียบร้อยแล้ว`)
-                    .addFields(
-                        { name: 'ผู้ใช้', value: `<@${interaction.user.id}>`, inline: true },
-                        { name: 'ไอดีผู้ใช้', value: interaction.user.id, inline: true },
-                        { name: 'ชื่อในระบบ', value: newNickname, inline: true },
-                        { name: 'เวลา', value: new Date().toLocaleString('th-TH'), inline: false }
-                    )
-                    .setColor(0x00FF00)
-                    .setThumbnail(interaction.user.displayAvatarURL())
-                    .setFooter({ text: 'Verification Logs' })
-                    .setTimestamp();
-
-                await logChannel.send({ embeds: [logEmbed] });
-            }
-        }
 
     } catch (err) {
         error(`Verification error: ${err.message}`);
