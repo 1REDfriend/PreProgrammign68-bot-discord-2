@@ -8,7 +8,7 @@ const ENV = {
     },
     verify: {
         studentLink: process.env.VERIFY_STUDENT_LINK || "https://example.com/verify/",
-        authToken: process.env.CLIENT_TOKEN || "token"
+        authToken: process.env.VERIFY_AUTH_TOKEN || "token"
     }
 }
 
