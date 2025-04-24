@@ -5,11 +5,10 @@ const prisma = new PrismaClient();
 
 const database_prisma_setup = async () => {
     try {
+        await prisma.$connect();
         info('Database setup with Prisma completed successfully.');
     } catch (e) {
         error('Failed to setup database with Prisma:', e.message);
-    } finally {
-        await prisma.$disconnect();
     }
 };
 
