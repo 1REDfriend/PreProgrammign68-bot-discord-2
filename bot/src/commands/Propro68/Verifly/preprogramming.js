@@ -107,8 +107,8 @@ module.exports = async (client, interaction) => {
 
         // เปลี่ยนชื่อโปรไฟล์ server
         const userData = await response.data.camper[0].user;
-        if (userData && userData.nickname && userData.fisrtName) {
-            const newNickname = `${userData.nickname} ${userData.fisrtName}`;
+        if (userData && userData.nickname && userData.firstName) {
+            const newNickname = `${userData.nickname} ${userData.firstName}`;
             await interaction.member.setNickname(newNickname);
         } else throw new Error('เกิดข้อผิดพลาดที่ระบบ ไม่พบข้อมูลชื่อโปรไฟล์จาก API');
 
