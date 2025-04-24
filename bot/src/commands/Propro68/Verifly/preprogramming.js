@@ -51,7 +51,7 @@ module.exports = async (client, interaction) => {
 
         const response = await axios.get(verifyUrl, {
             headers: {
-                'Authorization': `Bearer ${ENV.verify.authToken}`
+                'Authorization': `${ENV.verify.authToken}`
             }
         });
 
