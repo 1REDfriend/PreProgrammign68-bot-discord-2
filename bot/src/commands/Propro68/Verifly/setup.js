@@ -34,7 +34,8 @@ module.exports = async (client, interaction) => {
             create: {
                 guildId: interaction.guildId,
                 verifyRoleId: verifyRole.id,
-                verifyLogChannelId: logChannel ? logChannel.id : null
+                verifyLogChannelId: logChannel ? logChannel.id : null,
+                updatedAt: Date.now()
             }
         });
 
