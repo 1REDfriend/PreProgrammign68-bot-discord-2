@@ -14,17 +14,19 @@ class TrackUserListener {
 
         // ตรวจจับข้อความที่สร้างขึ้น
         client.on("messageCreate", async (message) => {
-            if (message.author.bot || message.channel.type === ChannelType.DM) return;
+            if (!message?.author || message.author.bot || message.channel.type === ChannelType.DM) return;
 
             try {
+                if (!message.guild?.id) return;
+
                 await prisma.userLog.create({
                     data: {
                         user_id: message.author.id,
                         username: message.author.username,
                         action: "message_create",
                         server_id: message.guild.id,
-                        channel_id: message.channel.id,
-                        message_content: message.content
+                        channel_id: message.channel?.id || "unknown",
+                        message_content: message.content || ""
                     }
                 });
             } catch (err) {
@@ -34,11 +36,17 @@ class TrackUserListener {
 
         // ตรวจจับการเปลี่ยนสถานะออนไลน์
         client.on("presenceUpdate", async (oldPresence, newPresence) => {
-            if (newPresence.user.bot) return;
-            const user = newPresence.user || oldPresence.user;
-            const status = newPresence.status || "offline";
+            if (!newPresence?.user || newPresence.user.bot) return;
 
             try {
+                const user = newPresence.user || oldPresence?.user;
+                if (!user) return;
+
+                const status = newPresence.status || "offline";
+
+                // ตรวจสอบว่ามี guild หรือไม่ (อาจเป็น DM)
+                if (!newPresence.guild?.id) return;
+
                 await prisma.userLog.create({
                     data: {
                         user_id: user.id,
@@ -55,50 +63,51 @@ class TrackUserListener {
 
         // ตรวจจับการเข้า/ออกช่องเสียง
         client.on("voiceStateUpdate", async (oldState, newState) => {
+            if (!newState?.member?.user) return;
             const user = newState.member.user;
+            if (user.bot) return;
 
-            if (!oldState.channel && newState.channel) {
+            try {
                 // เข้าช่องเสียง
-                try {
+                if (!oldState?.channel && newState?.channel) {
                     await prisma.userLog.create({
                         data: {
                             user_id: user.id,
                             username: user.username,
                             action: "join_voice_channel",
-                            server_id: newState.guild.id,
+                            server_id: newState.guild?.id || "unknown",
                             channel_id: newState.channel.id
                         }
                     });
-                } catch (err) {
-                    error("Error logging join voice channel:", err.message);
                 }
-            } else if (oldState.channel && !newState.channel) {
                 // ออกจากช่องเสียง
-                try {
+                else if (oldState?.channel && !newState?.channel) {
                     await prisma.userLog.create({
                         data: {
                             user_id: user.id,
                             username: user.username,
                             action: "leave_voice_channel",
-                            server_id: oldState.guild.id,
+                            server_id: oldState.guild?.id || "unknown",
                             channel_id: oldState.channel.id
                         }
                     });
-                } catch (err) {
-                    error("Error logging leave voice channel:", err.message);
                 }
+            } catch (err) {
+                error("Error logging voice channel update:", err.message);
             }
         });
 
         // ตรวจจับการเข้า/ออกเซิร์ฟเวอร์
         client.on("guildMemberAdd", async (member) => {
+            if (!member || !member.user) return;
+
             try {
                 await prisma.userLog.create({
                     data: {
                         user_id: member.id,
                         username: member.user.username,
                         action: "join_server",
-                        server_id: member.guild.id
+                        server_id: member.guild?.id || "unknown"
                     }
                 });
             } catch (err) {
@@ -107,31 +116,40 @@ class TrackUserListener {
         });
 
         client.on("guildMemberRemove", async (member) => {
+            if (!member || !member.user) return;
+
             try {
                 await prisma.userLog.create({
                     data: {
                         user_id: member.id,
                         username: member.user.username,
                         action: "leave_server",
-                        server_id: member.guild.id
+                        server_id: member.guild?.id || "unknown"
                     }
                 });
             } catch (err) {
                 error("Error logging user leave server:", err.message);
             }
         });
+
         client.on("messageReactionAdd", async (reaction, user) => {
-            if (user.bot) return;
+            if (!user || user.bot) return;
+            if (!reaction?.message?.guild) return; // ไม่บันทึกกรณีเป็น DM
+
             try {
+                const emojiName = reaction.emoji.id
+                    ? `<:${reaction.emoji.name}:${reaction.emoji.id}>` // Custom emoji
+                    : reaction.emoji.name; // Standard emoji
+
                 await prisma.userLog.create({
                     data: {
                         user_id: user.id,
                         username: user.username,
                         action: "reaction_add",
                         server_id: reaction.message.guild.id,
-                        channel_id: reaction.message.channel.id,
-                        message_content: reaction.message.content,
-                        status: reaction.emoji.name // สามารถบันทึกชื่อของ emoji
+                        channel_id: reaction.message.channel?.id || "unknown",
+                        message_content: reaction.message.content || "",
+                        status: emojiName || "unknown_emoji"
                     }
                 });
             } catch (err) {
@@ -141,17 +159,23 @@ class TrackUserListener {
 
         // ติดตามการลบ reaction
         client.on("messageReactionRemove", async (reaction, user) => {
-            if (user.bot) return;
+            if (!user || user.bot) return;
+            if (!reaction?.message?.guild) return; // ไม่บันทึกกรณีเป็น DM
+
             try {
+                const emojiName = reaction.emoji.id
+                    ? `<:${reaction.emoji.name}:${reaction.emoji.id}>` // Custom emoji
+                    : reaction.emoji.name; // Standard emoji
+
                 await prisma.userLog.create({
                     data: {
                         user_id: user.id,
                         username: user.username,
                         action: "reaction_remove",
                         server_id: reaction.message.guild.id,
-                        channel_id: reaction.message.channel.id,
-                        message_content: reaction.message.content,
-                        status: reaction.emoji.name
+                        channel_id: reaction.message.channel?.id || "unknown",
+                        message_content: reaction.message.content || "",
+                        status: emojiName || "unknown_emoji"
                     }
                 });
             } catch (err) {
@@ -161,7 +185,9 @@ class TrackUserListener {
 
         // ติดตามการแก้ไขข้อความ
         client.on("messageUpdate", async (oldMessage, newMessage) => {
-            if (oldMessage.author.bot) return;
+            if (!oldMessage?.author || oldMessage.author.bot) return;
+            if (!oldMessage.guild) return; // ไม่บันทึกกรณีเป็น DM
+
             try {
                 await prisma.userLog.create({
                     data: {
@@ -169,8 +195,8 @@ class TrackUserListener {
                         username: oldMessage.author.username,
                         action: "message_update",
                         server_id: oldMessage.guild.id,
-                        channel_id: oldMessage.channel.id,
-                        message_content: newMessage.content // บันทึกข้อความที่ได้รับการแก้ไข
+                        channel_id: oldMessage.channel?.id || "unknown",
+                        message_content: newMessage.content || ""
                     }
                 });
             } catch (err) {
@@ -180,7 +206,9 @@ class TrackUserListener {
 
         // ติดตามการลบข้อความ
         client.on("messageDelete", async (message) => {
-            if (message.author.bot) return;
+            if (!message?.author || message.author.bot) return;
+            if (!message.guild) return; // ไม่บันทึกกรณีเป็น DM
+
             try {
                 await prisma.userLog.create({
                     data: {
@@ -188,8 +216,8 @@ class TrackUserListener {
                         username: message.author.username,
                         action: "message_delete",
                         server_id: message.guild.id,
-                        channel_id: message.channel.id,
-                        message_content: message.content // บันทึกข้อความที่ถูกลบ
+                        channel_id: message.channel?.id || "unknown",
+                        message_content: message.content || ""
                     }
                 });
             } catch (err) {
