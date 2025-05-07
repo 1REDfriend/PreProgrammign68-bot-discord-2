@@ -8,8 +8,8 @@ const changeNameHandler = require("./Verifly/change-name");
 
 module.exports = new ApplicationCommand({
     command: {
-        name: 'verifly',
-        description: 'Verifly to PreProgramming 68',
+        name: 'verify',
+        description: 'Verify to PreProgramming 68',
         type: 1,
         options: [
             {
