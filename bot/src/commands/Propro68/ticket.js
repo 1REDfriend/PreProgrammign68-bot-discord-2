@@ -1,9 +1,10 @@
-const { ChatInputCommandInteraction, ApplicationCommandOptionType, ChannelType } = require("discord.js");
+const { ChatInputCommandInteraction, ApplicationCommandOptionType, ChannelType, PermissionsBitField } = require("discord.js");
 const DiscordBot = require("../../client/DiscordBot");
 const ApplicationCommand = require("../../structure/ApplicationCommand");
 
 const setupHandler = require("./Tickets/setup");
 const findHandler = require("./Tickets/find");
+const uninstallHandler = require("./Tickets/uninstall");
 
 module.exports = new ApplicationCommand({
     command: {
@@ -56,23 +57,30 @@ module.exports = new ApplicationCommand({
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: 'ticket_id',
-                        description: 'ID of the ticket to find.',
-                        type: ApplicationCommandOptionType.String,
-                        required: false
+                        name: 'show_closed',
+                        description: 'ค้นหาเฉพาะตั๋วที่ปิดแล้วด้วยหรือไม่',
+                        type: ApplicationCommandOptionType.Boolean,
+                        required: true
                     },
+                ]
+            },
+            {
+                name: 'uninstall',
+                description: 'ลบข้อมูลการตั้งค่า Ticket สำหรับเซิร์ฟเวอร์นี้',
+                type: ApplicationCommandOptionType.Subcommand,
+                options: [
                     {
-                        name: 'who',
-                        description: 'Find by username of user.',
-                        type: ApplicationCommandOptionType.User,
-                        required: false
+                        name: 'confirm',
+                        description: 'ยืนยันการลบการตั้งค่า Ticket',
+                        type: ApplicationCommandOptionType.Boolean,
+                        required: true
                     },
                 ]
             }
         ]
     },
     options: [{
-        adminOnly: true
+        cooldown: 1000
     }],
     /**
      * 
@@ -86,6 +94,8 @@ module.exports = new ApplicationCommand({
             return setupHandler(client, interaction);
         } else if (subcommand === 'find') {
             return findHandler(client, interaction);
+        } else if (subcommand === 'uninstall') {
+            return uninstallHandler(client, interaction);
         } else {
             return interaction.reply({
                 content: "Invalid subcommand.",

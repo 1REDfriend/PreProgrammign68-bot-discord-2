@@ -15,22 +15,22 @@ module.exports = new Component({
 
         const modal = new ModalBuilder()
             .setCustomId('create_ticket')
-            .setTitle('Create a Ticket');
+            .setTitle('เริ่มต้นสร้าง Ticket เลย');
 
         const messageField = new TextInputBuilder()
             .setCustomId('create_ticket-field-1')
-            .setLabel('What message do you want to show?')
+            .setLabel('หัวข้อ')
             .setStyle(TextInputStyle.Short)
-            .setPlaceholder('Enter your message here!')
+            .setPlaceholder('กรอกข้อความที่คุณต้องการแสดงอะไรก็ได้')
             .setRequired(true)
             .setMaxLength(255)
             .setMinLength(2);
 
         const descriptionField = new TextInputBuilder()
             .setCustomId('create_ticket-field-2')
-            .setLabel('What message description do you want to show?')
+            .setLabel('คำอธิบายหัวข้อ')
             .setStyle(TextInputStyle.Paragraph)
-            .setPlaceholder('Enter your message here!')
+            .setPlaceholder('กรอกข้อความที่คุณต้องการแสดงอะไรก็ได้')
             .setRequired(false)
             .setMaxLength(255);
 

@@ -1,4 +1,4 @@
-const { ChatInputCommandInteraction, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
+const { ChatInputCommandInteraction, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionsBitField } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient()
@@ -8,136 +8,72 @@ const prisma = new PrismaClient()
  * @param {ChatInputCommandInteraction} interaction 
  */
 module.exports = async (client, interaction) => {
-    // ตัวอย่างการค้นหา Ticket
-    const ticketId = interaction.options.getString('ticket_id');
-    const user = interaction.options.getUser('who');
-
-    if (ticketId) {
-        const data = await prisma.ticketLog.findMany({
-            select: {
-                ticket_id: ticketId
-            }
-        })
-
-        if (data.length > 0) {
-            const mappedData = data.map(entry => ({
-                message_id: entry.message_id,
-                user_id: entry.user_id,
-                username: entry.username,
-                content: entry.content,
-                created_at: entry.created_at,
-            }));
-
-            await interaction.reply({
-                content: `Found ${data.length} message(s) for ticket ID: ${ticketId}`,
-                embeds: await Promise.all(mappedData.map(async msg => {
-                    const fetchedUser = await client.users.fetch(msg.user_id).catch(() => null);
-                    const avatarURL = fetchedUser ? fetchedUser.displayAvatarURL({ dynamic: true, size: 128 }) : null;
-
-                    return {
-                        thumbnail: avatarURL ? { url: avatarURL } : undefined,
-                        title: `Message ID: ${msg.message_id}`,
-                        description: `User: <@${msg.username}> (${msg.user_id})\nContent: ${msg.content}\nCreated At: ${msg.created_at}`,
-                        color: 0x64ff64,
-                    };
-                })),
-                flags: 64
-            });
-        } else {
-            await interaction.reply({
-                content: `No messages found for ticket ID: ${ticketId}`,
-                flags: 64
-            });
-        }
-    } else if (user) {
-        const data = await prisma.messageLog.findMany({
-            select: {
-                user_id: user.id
-            }
-        })
-
-        if (data.length > 0) {
-            const mappedData = data.map(entry => ({
-                message_id: entry.message_id,
-                user_id: entry.user_id,
-                ticket_id: entry.ticket_id,
-                content: entry.content,
-                created_at: entry.created_at,
-            }));
-
-            await interaction.reply({
-                content: `Found ${data.length} message(s) for user ID: <@${user.id}>`,
-                embeds: await Promise.all(mappedData.map(async msg => {
-
-                    const fetchedUser = await client.users.fetch(msg.user_id).catch(() => null);
-                    const avatarURL = fetchedUser ? fetchedUser.displayAvatarURL({ dynamic: true, size: 128 }) : null;
-
-                    return {
-                        thumbnail: avatarURL ? { url: avatarURL } : undefined,
-                        title: `Message ID: ${msg.message_id}`,
-                        description: `Ticket ID: ${msg.ticket_id}\nContent: ${msg.content}\nCreated At: ${msg.created_at}`,
-                        color: 0x64ff64,
-                    };
-                })),
-                flags: 64
-            });
-        } else {
-            await interaction.reply({
-                content: `No messages found for user ID: <@${user.id}>`,
-                flags: 64
-            });
-        }
-    } else {
-        const data = await prisma.ticketLog.findMany({
-            where: { guild_id: interaction.guildId },
-            distinct: ['ticket_id', 'user_id'],
-            select: { ticket_id: true, user_id: true }
-        })
-
-        if (data.length > 0) {
-            const ticketOptions = await Promise.all(data.map(async entry => {
-                const fetchedUser = await client.users.fetch(entry.user_id).catch(() => null);
-                const username = fetchedUser ? fetchedUser.username : 'Unknown User';
-
-                const date = new Date(parseInt(entry.ticket_id.slice(7, -1)) * 1000);
-                const formattedDate = date.toLocaleString("th-TH", {
-                    timeZone: "Asia/Bangkok",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                });
-
-                return {
-                    label: `Ticket ID: ${formattedDate} (User: ${username})`,
-                    value: entry.ticket_id,
-                };
-            }));
-
-            const embed = new EmbedBuilder()
-                .setTitle("Available Tickets")
-                .setDescription("Chose a Ticket ID from below:")
-                .setColor("Blue");
-
-            const selectMenu = new StringSelectMenuBuilder()
-                .setCustomId('select-ticket')
-                .setPlaceholder('Select a ticket ID')
-                .addOptions(ticketOptions);
-
-            const actionRow = new ActionRowBuilder().addComponents(selectMenu);
-
-            await interaction.reply({
-                embeds: [embed],
-                components: [actionRow],
-                flags: 64
-            });
-        } else {
-            await interaction.reply({
-                content: "No tickets found in the database for this server.",
-                flags: 64
-            });
-        }
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers) && !interaction.member.roles.cache.some(role => role.name.startsWith('{') || role.name.endsWith('}'))) {
+        return interaction.reply({
+            content: "You do not have permission to use this command.",
+            ephemeral: true
+        });
     }
+    const showClosed = interaction.options.getBoolean('show_closed') ?? true; // แสดงตั๋วที่ปิดแล้วด้วย
+    // ค้นหาตั๋วทั้งหมดในเซิร์ฟเวอร์
+    const tickets = await prisma.ticketLog.findMany({
+        where: {
+            guild_id: interaction.guildId,
+            ...(showClosed ? {} : { status: 'open' })
+        },
+        orderBy: { created_at: 'desc' }
+    });
+
+    if (tickets.length === 0) {
+        return await interaction.reply({
+            content: "ไม่พบตั๋วในฐานข้อมูลสำหรับเซิร์ฟเวอร์นี้",
+            ephemeral: true
+        });
+    }
+
+    const ticketOptions = await Promise.all(tickets.map(async ticket => {
+        const fetchedUser = await client.users.fetch(ticket.user_id).catch(() => null);
+        const username = fetchedUser ? fetchedUser.username : 'ผู้ใช้ที่ไม่รู้จัก';
+
+        return {
+            label: `${ticket.title.substring(0, 80)} (${username})`,
+            description: `สถานะ: ${ticket.status === 'open' ? 'เปิด' : 'ปิด'} | ${new Date(ticket.created_at).toLocaleDateString("th-TH")}`,
+            value: ticket.ticket_id,
+            emoji: ticket.status === 'open' ? '🟢' : '🔴'
+        };
+    }));
+
+    const embed = new EmbedBuilder()
+        .setTitle("ตั๋วที่มีอยู่")
+        .setDescription("เลือกตั๋วจากรายการด้านล่าง:")
+        .setColor(0x0099FF);
+
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('view-ticket')
+        .setPlaceholder('เลือกตั๋ว')
+        .addOptions(ticketOptions);
+
+    const filterButtons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('filter-open')
+            .setLabel('แสดงที่เปิดอยู่')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('🟢'),
+        new ButtonBuilder()
+            .setCustomId('filter-closed')
+            .setLabel('แสดงที่ปิดแล้ว')
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji('🔴'),
+        new ButtonBuilder()
+            .setCustomId('filter-all')
+            .setLabel('แสดงทั้งหมด')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('📋')
+    );
+
+    await interaction.reply({
+        embeds: [embed],
+        components: [new ActionRowBuilder().addComponents(selectMenu), filterButtons],
+        ephemeral: true
+    });
 };

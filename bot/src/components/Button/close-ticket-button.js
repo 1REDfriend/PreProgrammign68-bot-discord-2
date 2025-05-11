@@ -42,7 +42,23 @@ module.exports = new Component({
                     skipDuplicates: true,
                 });
 
-                await interaction.channel.send('------------------- End -------------------');
+                // อัปเดตสถานะตั๋วเป็นปิด และบันทึกวันที่ปิด
+                await prisma.ticketLog.update({
+                    where: {
+                        ticket_id: channelName
+                    },
+                    data: {
+                        status: 'closed',
+                        closed_at: new Date()
+                    }
+                });
+
+                await interaction.channel.send({
+                    content: `# ตั๋วถูกปิดโดย <@${interaction.user.id}>\nตั๋วนี้จะถูกลบในอีกไม่กี่วินาที อย่ากังวล ข้อมูลทั้งหมดจะถูกบันทึกไว้\nคุณสามารถเปิดตั๋วนี้อีกครั้งได้ด้วยคำสั่ง \`/ticket find\``
+                });
+
+                // รอ 5 วินาทีก่อนลบช่อง
+                await new Promise(resolve => setTimeout(resolve, 5000));
 
                 try {
                     info(`delete channel ${interaction.channel.name}`);

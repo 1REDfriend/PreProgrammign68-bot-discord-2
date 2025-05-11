@@ -1,4 +1,4 @@
-const { Client, Collection, Partials } = require("discord.js");
+const { Client, Collection, Partials, GatewayIntentBits, ButtonStyle } = require("discord.js");
 const { database_sqlite_setup } = require("../utils/Database");
 
 const { warn, error, info, success } = require("../utils/Console");
@@ -15,15 +15,22 @@ const MemberApprovalListener = require("./handler/MemberApprovalListener");
 
 class DiscordBot extends Client {
     collection = {
+        commands: {
+            application: new Collection(),
+        },
+        components: {
+            buttons: new Collection(),
+            regexButtons: new Collection(),
+            selects: new Collection(),
+            regexSelects: new Collection(),
+            modals: new Collection(),
+            regexModals: new Collection(),
+            autocomplete: new Collection(),
+        },
+        memberRequests: new Collection(),
         application_commands: new Collection(),
         message_commands: new Collection(),
         message_commands_aliases: new Collection(),
-        components: {
-            buttons: new Collection(),
-            selects: new Collection(),
-            modals: new Collection(),
-            autocomplete: new Collection()
-        }
     }
     rest_application_commands_array = [];
     login_attempts = 0;
@@ -41,9 +48,64 @@ class DiscordBot extends Client {
     events_handler = new EventsHandler(this);
     memberApprovalHandler = new MemberApprovalHandler(this);
 
-    constructor() {
+    buttonComponent = {
+        /**
+         * สร้างปุ่มกดสำหรับการโต้ตอบ
+         * @param {string} customId - ID ของปุ่ม
+         * @param {string} label - ข้อความบนปุ่ม
+         * @param {string|number} style - รูปแบบของปุ่ม (Primary, Secondary, Success, Danger, Link) หรือค่าตัวเลข (1-5)
+         * @param {string} emoji - อีโมจิสำหรับปุ่ม (ถ้ามี)
+         * @returns {object} - ข้อมูลปุ่มสำหรับส่งไปยัง Discord API
+         */
+        createButton: (customId, label, style, emoji) => {
+            // แปลง style จาก string เป็น number ตาม ButtonStyle
+            if (typeof style === 'string') {
+                switch (style.toLowerCase()) {
+                    case 'primary':
+                        style = ButtonStyle.Primary; // 1
+                        break;
+                    case 'secondary':
+                        style = ButtonStyle.Secondary; // 2
+                        break;
+                    case 'success':
+                        style = ButtonStyle.Success; // 3
+                        break;
+                    case 'danger':
+                        style = ButtonStyle.Danger; // 4
+                        break;
+                    case 'link':
+                        style = ButtonStyle.Link; // 5
+                        break;
+                    default:
+                        style = ButtonStyle.Primary; // ค่าเริ่มต้น
+                }
+            }
+
+            return {
+                type: 2,
+                custom_id: customId,
+                label,
+                style,
+                emoji
+            }
+        },
+        createRow: (buttons) => {
+            return {
+                type: 1,
+                components: buttons
+            }
+        }
+    };
+
+    constructor(options) {
         super({
-            intents: 3276799,
+            intents: [
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.GuildVoiceStates,
+                GatewayIntentBits.DirectMessages,
+                GatewayIntentBits.MessageContent
+            ],
             partials: [
                 Partials.Channel,
                 Partials.GuildMember,

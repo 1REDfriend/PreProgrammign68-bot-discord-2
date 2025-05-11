@@ -60,9 +60,9 @@ module.exports = new Component({
                     },
                 })
                 const e = new EmbedBuilder().setTitle(title).setDescription(description).setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.avatarURL() }).setTimestamp()
-                const btn = new ButtonBuilder().setCustomId('close-ticket').setLabel('Close Ticket').setStyle(ButtonStyle.Danger)
+                const btn = new ButtonBuilder().setCustomId('close-ticket').setLabel('ปิดตั๋ว').setStyle(ButtonStyle.Danger)
                 await channel.send({ embeds: [e], components: [new ActionRowBuilder().addComponents(btn)] })
-                await interaction.reply({ content: `Your ticket has been created: <#${channel.id}>`, flags: 64 })
+                await interaction.reply({ content: `ตั๋วของคุณได้ถูกสร้างเรียบร้อย: <#${channel.id}>`, flags: 64 })
                 info(`${interaction.guild.name} user: ${interaction.user.displayName} created a ticket => ${channel}`)
             } catch (err) {
                 await channel.delete()
@@ -70,7 +70,7 @@ module.exports = new Component({
             }
         } catch (err) {
             error('Error fetching ticket configuration:', err.message)
-            await interaction.reply({ content: "An error occurred while creating your ticket.", ephemeral: true })
+            await interaction.reply({ content: "เกิดข้อผิดพลาดในการสร้างตั๋ว", ephemeral: true })
         } finally {
             await prisma.$disconnect()
         }

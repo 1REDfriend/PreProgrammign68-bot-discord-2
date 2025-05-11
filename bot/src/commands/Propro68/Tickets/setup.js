@@ -1,4 +1,4 @@
-const { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ChannelType, ChatInputCommandInteraction } = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ChannelType, ChatInputCommandInteraction, PermissionsBitField } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { info } = require("../../../utils/Console");
 const { PrismaClient } = require("@prisma/client");
@@ -10,6 +10,13 @@ const prisma = new PrismaClient()
  * @param {ChatInputCommandInteraction} interaction 
  */
 module.exports = async (client, interaction) => {
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
+        return interaction.reply({
+            content: "You do not have permission to use this command.",
+            ephemeral: true
+        });
+    }
+
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description') || "Click the button below to create a ticket.";
     const setChannel = interaction.options.getChannel('set_channel');
