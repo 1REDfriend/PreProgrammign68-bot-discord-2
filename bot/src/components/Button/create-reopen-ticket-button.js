@@ -94,15 +94,27 @@ module.exports = new Component({
                         },
                         {
                             id: ticketLog.user_id, // ผู้สร้างตั๋วดั้งเดิม
-                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                            allow: [
+                                PermissionsBitField.Flags.ViewChannel, 
+                                PermissionsBitField.Flags.SendMessages,
+                                PermissionsBitField.Flags.ReadMessageHistory
+                            ],
                         },
                         {
                             id: ticketConfig.role_id, // บทบาทแอดมิน/ทีมงาน
-                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                            allow: [
+                                PermissionsBitField.Flags.ViewChannel, 
+                                PermissionsBitField.Flags.SendMessages, 
+                                PermissionsBitField.Flags.ReadMessageHistory
+                            ],
                         },
                         {
                             id: interaction.user.id, // ผู้เปิดตั๋วใหม่ (ในกรณีที่ไม่ใช่คนเดิม)
-                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+                            allow: [
+                                PermissionsBitField.Flags.ViewChannel, 
+                                PermissionsBitField.Flags.SendMessages, 
+                                PermissionsBitField.Flags.ReadMessageHistory
+                            ],
                         }
                     ],
                     topic: `ตั๋วที่เปิดใหม่จาก ${ticketLog.title} | ผู้เปิด: <@${interaction.user.id}>`
