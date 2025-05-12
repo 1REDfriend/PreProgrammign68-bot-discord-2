@@ -46,7 +46,6 @@ module.exports = async (client, interaction) => {
                     membersWithRole.push(member.id);
                 });
             } else {
-                error(`Error fetching role members: ${fetchError.message}`);
                 return interaction.editReply({
                     content: `ไม่สามารถดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name} ได้ โปรดลองอีกครั้งในภายหลัง`
                 });
@@ -57,6 +56,8 @@ module.exports = async (client, interaction) => {
                 content: `เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name}: ${fetchError.message}`
             });
         }
+
+        info(`Members with role: ${membersWithRole}`);
 
         if (membersWithRole.length === 0) {
             const noMembersEmbed = new EmbedBuilder()
