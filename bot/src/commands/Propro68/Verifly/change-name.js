@@ -1,4 +1,4 @@
-const { EmbedBuilder, ChatInputCommandInteraction, ApplicationCommandOptionType } = require("discord.js");
+const { EmbedBuilder, ChatInputCommandInteraction, ApplicationCommandOptionType, InteractionResponseFlags } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { info, error } = require("../../../utils/Console");
 const ENV = require("../../../config/env");
@@ -11,7 +11,7 @@ const axios = require("axios");
  * @param {ChatInputCommandInteraction} interaction 
  */
 module.exports = async (client, interaction) => {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: [InteractionResponseFlags.Ephemeral] });
 
     try {
         // รับ role ที่ต้องการเปลี่ยนชื่อจาก interaction
@@ -37,19 +37,60 @@ module.exports = async (client, interaction) => {
         const membersWithRole = [];
 
         try {
-            const allMembers = await interaction.guild.members.fetch({ force: true });
-            
-            // เก็บ ID ของสมาชิกที่มี role ที่กำหนด
-            for (const member of allMembers.values()) {
+            // แยกเป็นชุดข้อมูลเล็กๆ เพื่อหลีกเลี่ยงปัญหา timeout
+            const fetchOptions = { limit: 100 };
+            let members = await interaction.guild.members.fetch(fetchOptions);
+
+            // เก็บสมาชิกที่มี role ที่กำหนด
+            for (const member of members.values()) {
                 if (member.roles.cache.has(targetRole.id)) {
                     membersWithRole.push(member.id);
                 }
             }
+
+            // ดึงข้อมูลเพิ่มเติมถ้ามีสมาชิกมากกว่า 100 คน
+            while (members.size === 100) {
+                const lastMember = members.last();
+                fetchOptions.after = lastMember.id;
+                members = await interaction.guild.members.fetch(fetchOptions);
+
+                for (const member of members.values()) {
+                    if (member.roles.cache.has(targetRole.id)) {
+                        membersWithRole.push(member.id);
+                    }
+                }
+            }
         } catch (fetchError) {
             error(`Error fetching members: ${fetchError.message}`);
-            return interaction.editReply({
-                content: "เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิก โปรดลองอีกครั้งในภายหลัง"
-            });
+
+            // วิธีที่ 2: ให้ลองดึงข้อมูล role โดยตรง
+            try {
+                const role = await interaction.guild.roles.fetch(targetRole.id);
+                if (role) {
+                    // ในบางกรณี Discord.js จะโหลด member ของ role มาให้โดยอัตโนมัติ
+                    if (role.members && role.members.size > 0) {
+                        for (const [memberId, member] of role.members) {
+                            membersWithRole.push(memberId);
+                        }
+                    }
+                    // ถ้าไม่มีข้อมูล members คือยังไม่ได้โหลด ให้โหลด role พร้อม members
+                    else {
+                        const guildWithRoles = await interaction.guild.fetch();
+                        const roleWithMembers = await guildWithRoles.roles.fetch(targetRole.id, { force: true, cache: true });
+
+                        if (roleWithMembers && roleWithMembers.members) {
+                            for (const [memberId, member] of roleWithMembers.members) {
+                                membersWithRole.push(memberId);
+                            }
+                        }
+                    }
+                }
+            } catch (roleError) {
+                error(`Error fetching role members: ${roleError.message}`);
+                return interaction.editReply({
+                    content: "เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิก โปรดลองอีกครั้งในภายหลัง"
+                });
+            }
         }
 
         if (membersWithRole.length === 0) {
@@ -76,7 +117,7 @@ module.exports = async (client, interaction) => {
                     noNameChange.push(memberId);
                     continue;
                 }
-                
+
                 // ตรวจสอบข้อมูลจาก API
                 const verifyUrl = `${ENV.verify.studentLink}${memberId}`;
 
