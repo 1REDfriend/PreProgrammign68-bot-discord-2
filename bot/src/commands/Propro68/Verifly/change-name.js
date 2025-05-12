@@ -39,10 +39,11 @@ module.exports = async (client, interaction) => {
         try {
             // ดึงข้อมูล role โดยตรง (ซึ่งจะมีสมาชิกใน cache อยู่แล้ว)
             const targetRoleObj = await interaction.guild.roles.fetch(targetRole.id);
-            
+
             if (targetRoleObj && targetRoleObj.members) {
                 // เก็บรายการสมาชิกจาก role.members ซึ่งเร็วกว่าการดึงทั้งหมด
                 targetRoleObj.members.forEach(member => {
+                    info(`${member.id}`)
                     membersWithRole.push(member.id);
                 });
             } else {
@@ -71,18 +72,18 @@ module.exports = async (client, interaction) => {
         // เก็บข้อมูลสมาชิกที่ต้องเปลี่ยนชื่อและไม่ต้องเปลี่ยนชื่อ
         const needsNameChange = [];
         const noNameChange = [];
-        
+
         // อัปเดต embed ให้แสดงจำนวนสมาชิกที่จะประมวลผล
         const updatedProcessingEmbed = EmbedBuilder.from(processingEmbed)
             .setFooter({ text: `กำลังประมวลผล 0/${membersWithRole.length} คน...` });
-            
+
         await interaction.editReply({ embeds: [updatedProcessingEmbed] });
 
         // ประมวลผลสมาชิกทีละคน
         let processedCount = 0;
         for (const memberId of membersWithRole) {
             processedCount++;
-            
+
             // อัพเดตสถานะทุก 10 คน เพื่อแสดงความคืบหน้า
             if (processedCount % 10 === 0 || processedCount === membersWithRole.length) {
                 const progressEmbed = EmbedBuilder.from(updatedProcessingEmbed)
@@ -97,7 +98,7 @@ module.exports = async (client, interaction) => {
                     noNameChange.push(memberId);
                     continue;
                 }
-                
+
                 // ตรวจสอบข้อมูลจาก API
                 try {
                     const verifyUrl = `${ENV.verify.studentLink}${memberId}`;
@@ -118,7 +119,7 @@ module.exports = async (client, interaction) => {
                         noNameChange.push(memberId);
                         continue;
                     }
-                    
+
                     const userData = response.data.camper[0].user;
 
                     // ถ้ามีการตั้งชื่อตรงกับที่ควรจะเป็นอยู่แล้ว ให้ไม่ต้องเปลี่ยนชื่อ
