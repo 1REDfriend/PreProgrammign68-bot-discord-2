@@ -37,8 +37,7 @@ module.exports = async (client, interaction) => {
         const membersWithRole = [];
 
         try {
-            // ดึงข้อมูล role โดยตรง (ซึ่งจะมีสมาชิกใน cache อยู่แล้ว)
-            const targetRoleObj = await interaction.guild.roles.fetch();
+            const targetRoleObj = await interaction.guild.roles.cache.get(targetRole.id);
 
             if (targetRoleObj && targetRoleObj.members) {
                 // เก็บรายการสมาชิกจาก role.members ซึ่งเร็วกว่าการดึงทั้งหมด
