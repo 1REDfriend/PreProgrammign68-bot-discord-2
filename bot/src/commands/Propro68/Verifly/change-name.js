@@ -38,12 +38,14 @@ module.exports = async (client, interaction) => {
 
         try {
             // ดึงข้อมูล role โดยตรง (ซึ่งจะมีสมาชิกใน cache อยู่แล้ว)
-            const targetRoleObj = await interaction.guild.roles.fetch(targetRole.id);
+            const targetRoleObj = await interaction.guild.roles.fetch();
 
             if (targetRoleObj && targetRoleObj.members) {
                 // เก็บรายการสมาชิกจาก role.members ซึ่งเร็วกว่าการดึงทั้งหมด
                 targetRoleObj.members.forEach(member => {
-                    membersWithRole.push(member.id);
+                    if (member.roles.cache.has(targetRole.id)) {
+                        membersWithRole.push(member.id);
+                    }
                 });
             } else {
                 return interaction.editReply({
