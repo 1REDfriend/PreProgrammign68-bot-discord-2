@@ -34,7 +34,8 @@ module.exports = async (client, interaction) => {
         await interaction.editReply({ embeds: [processingEmbed] });
 
         // ดึงข้อมูลสมาชิกทั้งหมดที่มี role ที่กำหนด
-        const membersWithRole = targetRole.members;
+        const allMembers = await interaction.guild.members.fetch();
+        const membersWithRole = allMembers.filter(member => member.roles.cache.has(targetRole.id));
 
         if (membersWithRole.size === 0) {
             const noMembersEmbed = new EmbedBuilder()
