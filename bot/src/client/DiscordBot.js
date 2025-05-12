@@ -104,7 +104,8 @@ class DiscordBot extends Client {
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.GuildVoiceStates,
                 GatewayIntentBits.DirectMessages,
-                GatewayIntentBits.MessageContent
+                GatewayIntentBits.MessageContent,
+                GatewayIntentBits.GuildMembers
             ],
             partials: [
                 Partials.Channel,
