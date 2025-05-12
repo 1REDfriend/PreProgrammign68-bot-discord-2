@@ -36,15 +36,23 @@ module.exports = async (client, interaction) => {
         // ดึงข้อมูลสมาชิกทั้งหมดที่มี role ที่กำหนด
         const membersWithRole = [];
 
-        const allMembers = await interaction.guild.members.fetch({ force: true });
-
-        for (const member of allMembers.values()) {
-            if (member.roles.cache.has(targetRole.id)) {
-                membersWithRole.push(member);
+        try {
+            const allMembers = await interaction.guild.members.fetch({ force: true });
+            
+            // เก็บ ID ของสมาชิกที่มี role ที่กำหนด
+            for (const member of allMembers.values()) {
+                if (member.roles.cache.has(targetRole.id)) {
+                    membersWithRole.push(member.id);
+                }
             }
+        } catch (fetchError) {
+            error(`Error fetching members: ${fetchError.message}`);
+            return interaction.editReply({
+                content: "เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิก โปรดลองอีกครั้งในภายหลัง"
+            });
         }
 
-        if (membersWithRole.size === 0) {
+        if (membersWithRole.length === 0) {
             const noMembersEmbed = new EmbedBuilder()
                 .setTitle("ไม่พบสมาชิก")
                 .setDescription(`ไม่พบสมาชิกที่มีบทบาท ${targetRole}`)
@@ -60,8 +68,15 @@ module.exports = async (client, interaction) => {
         const noNameChange = [];
 
         // ดำเนินการกับสมาชิกแต่ละคน
-        for (const [memberId, member] of membersWithRole) {
+        for (const memberId of membersWithRole) {
             try {
+                // ดึงข้อมูลสมาชิกอีกครั้งเพื่อป้องกันปัญหา cache
+                const member = await interaction.guild.members.fetch(memberId).catch(() => null);
+                if (!member) {
+                    noNameChange.push(memberId);
+                    continue;
+                }
+                
                 // ตรวจสอบข้อมูลจาก API
                 const verifyUrl = `${ENV.verify.studentLink}${memberId}`;
 
@@ -78,7 +93,7 @@ module.exports = async (client, interaction) => {
                 }
 
                 // ถ้าพบข้อมูล ดำเนินการเปลี่ยนชื่อ
-                const userData = await response.data.camper[0].user;
+                const userData = response.data.camper[0].user;
 
                 // ถ้ามีการตั้งชื่อตรงกับที่ควรจะเป็นอยู่แล้ว ให้ไม่ต้องเปลี่ยนชื่อ
                 if (userData && userData.nickname && userData.firstName) {
@@ -92,10 +107,11 @@ module.exports = async (client, interaction) => {
                     const newNickname = `${userData.nickname} ${userData.firstName}`;
 
                     // ถ้าชื่อไม่ตรงกับที่ควรจะเป็น ให้เปลี่ยนชื่อ
-                    if (member.nickname !== newNickname) {
+                    try {
                         await member.setNickname(newNickname);
                         needsNameChange.push(memberId);
-                    } else {
+                    } catch (nicknameError) {
+                        error(`Error setting nickname for user ${memberId}: ${nicknameError.message}`);
                         noNameChange.push(memberId);
                     }
                 } else {
