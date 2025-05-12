@@ -43,19 +43,29 @@ module.exports = async (client, interaction) => {
     const actionRow = new ActionRowBuilder().addComponents(button);
 
     try {
+        // ตรวจสอบการตั้งค่าที่มีอยู่เดิม
+        const existingConfig = await prisma.ticket.findUnique({
+            where: { guild_id: interaction.guildId }
+        });
+
         // บันทึกข้อมูลลงในตาราง tickets ด้วย Prisma
         await prisma.ticket.upsert({
             where: { guild_id: interaction.guildId },
             update: {
                 category_id: setCategory.id,
                 role_id: setRole.id,
-                channel_id: setChannel.id
+                channel_id: setChannel.id,
+                // คงค่าการแจ้งเตือนเดิมไว้ถ้ามี
+                notification_channel_id: existingConfig?.notification_channel_id || null,
+                notification_role_id: existingConfig?.notification_role_id || null
             },
             create: {
                 guild_id: interaction.guildId,
                 category_id: setCategory.id,
                 role_id: setRole.id,
-                channel_id: setChannel.id
+                channel_id: setChannel.id,
+                notification_channel_id: null,
+                notification_role_id: null
             }
         });
 

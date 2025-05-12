@@ -16,7 +16,7 @@ module.exports = new Component({
                 where: { guild_id: interaction.guildId },
             })
             if (!ticket) return interaction.reply({ content: "Ticket configuration not found.", ephemeral: true })
-            const { category_id, role_id: staffRole } = ticket
+            const { category_id, role_id: staffRole, notification_channel_id, notification_role_id } = ticket
             const channel = await interaction.guild.channels.create({
                 name: `ticket-${Date.now()}`,
                 type: 0,
@@ -62,6 +62,32 @@ module.exports = new Component({
                 const e = new EmbedBuilder().setTitle(title).setDescription(description).setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.avatarURL() }).setTimestamp()
                 const btn = new ButtonBuilder().setCustomId('close-ticket').setLabel('ปิดตั๋ว').setStyle(ButtonStyle.Danger)
                 await channel.send({ embeds: [e], components: [new ActionRowBuilder().addComponents(btn)] })
+
+                // ส่งการแจ้งเตือนไปยังช่องที่กำหนดถ้ามีการตั้งค่าไว้
+                if (notification_channel_id) {
+                    const notificationChannel = await interaction.guild.channels.fetch(notification_channel_id).catch(() => null)
+                    if (notificationChannel) {
+                        const notificationEmbed = new EmbedBuilder()
+                            .setTitle('มีการสร้าง Ticket ใหม่')
+                            .setColor(0x00AE86)
+                            .setDescription(`**หัวข้อ:** ${title}\n**รายละเอียด:** ${description || 'ไม่มีรายละเอียด'}\n**ผู้สร้าง:** ${interaction.user.displayName}\n**ช่อง:** <#${channel.id}>`)
+                            .setTimestamp()
+                            .setFooter({ text: `Ticket ID: ${channel.name}` })
+
+                        let content = ''
+                        if (notification_role_id) {
+                            content = `<@&${notification_role_id}> มี Ticket ใหม่ที่ต้องการการดูแล!`
+                        }
+
+                        await notificationChannel.send({
+                            content: content,
+                            embeds: [notificationEmbed]
+                        }).catch(err => {
+                            error(`Failed to send notification: ${err.message}`)
+                        })
+                    }
+                }
+
                 await interaction.reply({ content: `ตั๋วของคุณได้ถูกสร้างเรียบร้อย: <#${channel.id}>`, flags: 64 })
                 info(`${interaction.guild.name} user: ${interaction.user.displayName} created a ticket => ${channel}`)
             } catch (err) {

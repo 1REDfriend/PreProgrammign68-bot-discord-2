@@ -5,6 +5,7 @@ const ApplicationCommand = require("../../structure/ApplicationCommand");
 const setupHandler = require("./Tickets/setup");
 const findHandler = require("./Tickets/find");
 const uninstallHandler = require("./Tickets/uninstall");
+const notificationHandler = require("./Tickets/notification");
 
 module.exports = new ApplicationCommand({
     command: {
@@ -47,6 +48,26 @@ module.exports = new ApplicationCommand({
                         name: 'description',
                         description: 'Description for looking interesting.',
                         type: ApplicationCommandOptionType.String,
+                        required: false
+                    },
+                ]
+            },
+            {
+                name: 'notification',
+                description: 'Setup notification settings for tickets',
+                type: ApplicationCommandOptionType.Subcommand,
+                options: [
+                    {
+                        name: 'channel',
+                        description: 'Set channel to receive notifications when a ticket is created',
+                        type: ApplicationCommandOptionType.Channel,
+                        channel_types: [ChannelType.GuildText],
+                        required: true
+                    },
+                    {
+                        name: 'role',
+                        description: 'Set role to be tagged in notifications',
+                        type: ApplicationCommandOptionType.Role,
                         required: false
                     },
                 ]
@@ -96,6 +117,8 @@ module.exports = new ApplicationCommand({
             return findHandler(client, interaction);
         } else if (subcommand === 'uninstall') {
             return uninstallHandler(client, interaction);
+        } else if (subcommand === 'notification') {
+            return notificationHandler(client, interaction);
         } else {
             return interaction.reply({
                 content: "Invalid subcommand.",
