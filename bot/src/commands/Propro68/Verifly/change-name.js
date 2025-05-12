@@ -28,7 +28,7 @@ module.exports = async (client, interaction) => {
             .setTitle("กำลังเปลี่ยนชื่อสมาชิก")
             .setDescription(`กำลังดำเนินการเปลี่ยนชื่อสมาชิกที่มีบทบาท ${targetRole}...`)
             .setColor(0x3498DB)
-            .setFooter({ text: `กำลังประมวลผล 0/${membersWithRole.length} คน...` })
+            .setFooter({ text: "กรุณารอสักครู่..." })
             .setTimestamp();
 
         await interaction.editReply({ embeds: [processingEmbed] });
@@ -71,6 +71,12 @@ module.exports = async (client, interaction) => {
         // เก็บข้อมูลสมาชิกที่ต้องเปลี่ยนชื่อและไม่ต้องเปลี่ยนชื่อ
         const needsNameChange = [];
         const noNameChange = [];
+        
+        // อัปเดต embed ให้แสดงจำนวนสมาชิกที่จะประมวลผล
+        const updatedProcessingEmbed = EmbedBuilder.from(processingEmbed)
+            .setFooter({ text: `กำลังประมวลผล 0/${membersWithRole.length} คน...` });
+            
+        await interaction.editReply({ embeds: [updatedProcessingEmbed] });
 
         // ประมวลผลสมาชิกทีละคน
         let processedCount = 0;
@@ -79,11 +85,11 @@ module.exports = async (client, interaction) => {
             
             // อัพเดตสถานะทุก 10 คน เพื่อแสดงความคืบหน้า
             if (processedCount % 10 === 0 || processedCount === membersWithRole.length) {
-                const updatedEmbed = EmbedBuilder.from(processingEmbed)
+                const progressEmbed = EmbedBuilder.from(updatedProcessingEmbed)
                     .setFooter({ text: `กำลังประมวลผล ${processedCount}/${membersWithRole.length} คน...` });
-                await interaction.editReply({ embeds: [updatedEmbed] });
+                await interaction.editReply({ embeds: [progressEmbed] });
             }
-            
+
             try {
                 // ดึงสมาชิกทีละคนแทนที่จะดึงทั้งหมดพร้อมกัน
                 const member = await interaction.guild.members.fetch(memberId).catch(() => null);
@@ -91,37 +97,43 @@ module.exports = async (client, interaction) => {
                     noNameChange.push(memberId);
                     continue;
                 }
-
+                
                 // ตรวจสอบข้อมูลจาก API
-                const verifyUrl = `${ENV.verify.studentLink}${memberId}`;
+                try {
+                    const verifyUrl = `${ENV.verify.studentLink}${memberId}`;
+                    const response = await axios.get(verifyUrl, {
+                        headers: {
+                            'Authorization': `${ENV.verify.authToken}`
+                        }
+                    });
 
-                const response = await axios.get(verifyUrl, {
-                    headers: {
-                        'Authorization': `${ENV.verify.authToken}`
-                    }
-                });
-
-                // ถ้าไม่พบข้อมูลหรือเกิดข้อผิดพลาด
-                if (response.data.error) {
-                    noNameChange.push(memberId);
-                    continue;
-                }
-
-                // ถ้าพบข้อมูล ดำเนินการเปลี่ยนชื่อ
-                const userData = response.data.camper[0].user;
-
-                // ถ้ามีการตั้งชื่อตรงกับที่ควรจะเป็นอยู่แล้ว ให้ไม่ต้องเปลี่ยนชื่อ
-                if (userData && userData.nickname && userData.firstName) {
-                    if (member.nickname === `${userData.nickname} ${userData.firstName}`) {
+                    // ถ้าไม่พบข้อมูลหรือเกิดข้อผิดพลาด
+                    if (response.data.error) {
                         noNameChange.push(memberId);
                         continue;
                     }
-                }
 
-                if (userData && userData.nickname && userData.firstName) {
+                    // ถ้าพบข้อมูล ดำเนินการเปลี่ยนชื่อ
+                    if (!response.data.camper || !response.data.camper[0] || !response.data.camper[0].user) {
+                        noNameChange.push(memberId);
+                        continue;
+                    }
+                    
+                    const userData = response.data.camper[0].user;
+
+                    // ถ้ามีการตั้งชื่อตรงกับที่ควรจะเป็นอยู่แล้ว ให้ไม่ต้องเปลี่ยนชื่อ
+                    if (userData && userData.nickname && userData.firstName) {
+                        if (member.nickname === `${userData.nickname} ${userData.firstName}`) {
+                            noNameChange.push(memberId);
+                            continue;
+                        }
+                    } else {
+                        noNameChange.push(memberId);
+                        continue;
+                    }
+
+                    // เปลี่ยนชื่อ
                     const newNickname = `${userData.nickname} ${userData.firstName}`;
-
-                    // ถ้าชื่อไม่ตรงกับที่ควรจะเป็น ให้เปลี่ยนชื่อ
                     try {
                         await member.setNickname(newNickname);
                         needsNameChange.push(memberId);
@@ -129,11 +141,12 @@ module.exports = async (client, interaction) => {
                         error(`Error setting nickname for user ${memberId}: ${nicknameError.message}`);
                         noNameChange.push(memberId);
                     }
-                } else {
+                } catch (apiError) {
+                    error(`API error for user ${memberId}: ${apiError.message}`);
                     noNameChange.push(memberId);
                 }
-            } catch (err) {
-                error(`Error changing name for user ${memberId}: ${err.message}`);
+            } catch (memberError) {
+                error(`Error processing member ${memberId}: ${memberError.message}`);
                 noNameChange.push(memberId);
             }
         }
