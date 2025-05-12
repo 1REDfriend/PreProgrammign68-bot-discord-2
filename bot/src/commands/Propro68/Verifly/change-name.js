@@ -1,4 +1,4 @@
-const { EmbedBuilder, ChatInputCommandInteraction, ApplicationCommandOptionType, InteractionResponseFlags } = require("discord.js");
+const { EmbedBuilder, ChatInputCommandInteraction } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { info, error } = require("../../../utils/Console");
 const ENV = require("../../../config/env");
@@ -11,7 +11,7 @@ const axios = require("axios");
  * @param {ChatInputCommandInteraction} interaction 
  */
 module.exports = async (client, interaction) => {
-    await interaction.deferReply({ flags: [InteractionResponseFlags.Ephemeral] });
+    await interaction.deferReply({ flags: 64 });
 
     try {
         // รับ role ที่ต้องการเปลี่ยนชื่อจาก interaction
