@@ -43,10 +43,10 @@ module.exports = async (client, interaction) => {
             if (targetRoleObj && targetRoleObj.members) {
                 // เก็บรายการสมาชิกจาก role.members ซึ่งเร็วกว่าการดึงทั้งหมด
                 targetRoleObj.members.forEach(member => {
-                    info(`${member.id}`)
                     membersWithRole.push(member.id);
                 });
             } else {
+                error(`Error fetching role members: ${fetchError.message}`);
                 return interaction.editReply({
                     content: `ไม่สามารถดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name} ได้ โปรดลองอีกครั้งในภายหลัง`
                 });
