@@ -28,7 +28,7 @@ module.exports = async (client, interaction) => {
             .setTitle("กำลังเปลี่ยนชื่อสมาชิก")
             .setDescription(`กำลังดำเนินการเปลี่ยนชื่อสมาชิกที่มีบทบาท ${targetRole}...`)
             .setColor(0x3498DB)
-            .setFooter({ text: "กรุณารอสักครู่..." })
+            .setFooter({ text: `กำลังประมวลผล 0/${membersWithRole.length} คน...` })
             .setTimestamp();
 
         await interaction.editReply({ embeds: [processingEmbed] });
@@ -37,60 +37,24 @@ module.exports = async (client, interaction) => {
         const membersWithRole = [];
 
         try {
-            // แยกเป็นชุดข้อมูลเล็กๆ เพื่อหลีกเลี่ยงปัญหา timeout
-            const fetchOptions = { limit: 100 };
-            let members = await interaction.guild.members.fetch(fetchOptions);
-
-            // เก็บสมาชิกที่มี role ที่กำหนด
-            for (const member of members.values()) {
-                if (member.roles.cache.has(targetRole.id)) {
+            // ดึงข้อมูล role โดยตรง (ซึ่งจะมีสมาชิกใน cache อยู่แล้ว)
+            const targetRoleObj = await interaction.guild.roles.fetch(targetRole.id);
+            
+            if (targetRoleObj && targetRoleObj.members) {
+                // เก็บรายการสมาชิกจาก role.members ซึ่งเร็วกว่าการดึงทั้งหมด
+                targetRoleObj.members.forEach(member => {
                     membersWithRole.push(member.id);
-                }
-            }
-
-            // ดึงข้อมูลเพิ่มเติมถ้ามีสมาชิกมากกว่า 100 คน
-            while (members.size === 100) {
-                const lastMember = members.last();
-                fetchOptions.after = lastMember.id;
-                members = await interaction.guild.members.fetch(fetchOptions);
-
-                for (const member of members.values()) {
-                    if (member.roles.cache.has(targetRole.id)) {
-                        membersWithRole.push(member.id);
-                    }
-                }
-            }
-        } catch (fetchError) {
-            error(`Error fetching members: ${fetchError.message}`);
-
-            // วิธีที่ 2: ให้ลองดึงข้อมูล role โดยตรง
-            try {
-                const role = await interaction.guild.roles.fetch(targetRole.id);
-                if (role) {
-                    // ในบางกรณี Discord.js จะโหลด member ของ role มาให้โดยอัตโนมัติ
-                    if (role.members && role.members.size > 0) {
-                        for (const [memberId, member] of role.members) {
-                            membersWithRole.push(memberId);
-                        }
-                    }
-                    // ถ้าไม่มีข้อมูล members คือยังไม่ได้โหลด ให้โหลด role พร้อม members
-                    else {
-                        const guildWithRoles = await interaction.guild.fetch();
-                        const roleWithMembers = await guildWithRoles.roles.fetch(targetRole.id, { force: true, cache: true });
-
-                        if (roleWithMembers && roleWithMembers.members) {
-                            for (const [memberId, member] of roleWithMembers.members) {
-                                membersWithRole.push(memberId);
-                            }
-                        }
-                    }
-                }
-            } catch (roleError) {
-                error(`Error fetching role members: ${roleError.message}`);
+                });
+            } else {
                 return interaction.editReply({
-                    content: "เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิก โปรดลองอีกครั้งในภายหลัง"
+                    content: `ไม่สามารถดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name} ได้ โปรดลองอีกครั้งในภายหลัง`
                 });
             }
+        } catch (fetchError) {
+            error(`Error fetching role members: ${fetchError.message}`);
+            return interaction.editReply({
+                content: `เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name}: ${fetchError.message}`
+            });
         }
 
         if (membersWithRole.length === 0) {
@@ -108,10 +72,20 @@ module.exports = async (client, interaction) => {
         const needsNameChange = [];
         const noNameChange = [];
 
-        // ดำเนินการกับสมาชิกแต่ละคน
+        // ประมวลผลสมาชิกทีละคน
+        let processedCount = 0;
         for (const memberId of membersWithRole) {
+            processedCount++;
+            
+            // อัพเดตสถานะทุก 10 คน เพื่อแสดงความคืบหน้า
+            if (processedCount % 10 === 0 || processedCount === membersWithRole.length) {
+                const updatedEmbed = EmbedBuilder.from(processingEmbed)
+                    .setFooter({ text: `กำลังประมวลผล ${processedCount}/${membersWithRole.length} คน...` });
+                await interaction.editReply({ embeds: [updatedEmbed] });
+            }
+            
             try {
-                // ดึงข้อมูลสมาชิกอีกครั้งเพื่อป้องกันปัญหา cache
+                // ดึงสมาชิกทีละคนแทนที่จะดึงทั้งหมดพร้อมกัน
                 const member = await interaction.guild.members.fetch(memberId).catch(() => null);
                 if (!member) {
                     noNameChange.push(memberId);
