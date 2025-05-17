@@ -47,7 +47,7 @@ module.exports = async (client, interaction) => {
         const noNameChange = [];
 
         // ดึงข้อมูลสมาชิกเป็นกลุ่มๆ ละ 10 คน และเปลี่ยนชื่อทันที
-        const BATCH_SIZE = 100;
+        const BATCH_SIZE = 1000;
         let lastId = '0';
         let continueLoop = true;
         let totalProcessed = 0;
