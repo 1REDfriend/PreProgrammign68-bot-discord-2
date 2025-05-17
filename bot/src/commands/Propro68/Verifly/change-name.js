@@ -1,4 +1,4 @@
-const { EmbedBuilder, ChatInputCommandInteraction } = require("discord.js");
+const { EmbedBuilder, ChatInputCommandInteraction, ApplicationCommandOptionType, Collection } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { info, error } = require("../../../utils/Console");
 const ENV = require("../../../config/env");
@@ -11,7 +11,7 @@ const axios = require("axios");
  * @param {ChatInputCommandInteraction} interaction 
  */
 module.exports = async (client, interaction) => {
-    await interaction.deferReply({ flags: 64 });
+    await interaction.deferReply({ ephemeral: true });
 
     try {
         // รับ role ที่ต้องการเปลี่ยนชื่อจาก interaction
@@ -33,77 +33,71 @@ module.exports = async (client, interaction) => {
 
         await interaction.editReply({ embeds: [processingEmbed] });
 
-        // ดึงข้อมูลสมาชิกทั้งหมดที่มี role ที่กำหนด
-        const membersWithRole = [];
-
-        try {
-            const targetRoleObj = await interaction.guild.roles.cache.get(targetRole.id);
-
-            if (targetRoleObj && targetRoleObj.members) {
-                // เก็บรายการสมาชิกจาก role.members ซึ่งเร็วกว่าการดึงทั้งหมด
-                targetRoleObj.members.forEach(member => {
-                    if (member.roles.cache.has(targetRole.id)) {
-                        membersWithRole.push(member.id);
-                    }
-                });
-            } else {
-                return interaction.editReply({
-                    content: `ไม่สามารถดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name} ได้ โปรดลองอีกครั้งในภายหลัง`
-                });
-            }
-        } catch (fetchError) {
-            error(`Error fetching role members: ${fetchError.message}`);
-            return interaction.editReply({
-                content: `เกิดข้อผิดพลาดในการดึงข้อมูลสมาชิกที่มีบทบาท ${targetRole.name}: ${fetchError.message}`
-            });
-        }
-
-        info(`Members with role: ${membersWithRole}`);
-
-        if (membersWithRole.length === 0) {
-            const noMembersEmbed = new EmbedBuilder()
-                .setTitle("ไม่พบสมาชิก")
-                .setDescription(`ไม่พบสมาชิกที่มีบทบาท ${targetRole}`)
-                .setColor(0xE74C3C)
-                .setFooter({ text: "ไม่สามารถดำเนินการได้" })
-                .setTimestamp();
-
-            return interaction.editReply({ embeds: [noMembersEmbed] });
-        }
-
         // เก็บข้อมูลสมาชิกที่ต้องเปลี่ยนชื่อและไม่ต้องเปลี่ยนชื่อ
         const needsNameChange = [];
         const noNameChange = [];
 
-        // อัปเดต embed ให้แสดงจำนวนสมาชิกที่จะประมวลผล
-        const updatedProcessingEmbed = EmbedBuilder.from(processingEmbed)
-            .setFooter({ text: `กำลังประมวลผล 0/${membersWithRole.length} คน...` });
+        // ดึงข้อมูลสมาชิกเป็นกลุ่มๆ ละ 5 คน และเปลี่ยนชื่อทันที
+        const BATCH_SIZE = 5;
+        let lastId = '0';
+        let continueLoop = true;
+        let totalProcessed = 0;
 
-        await interaction.editReply({ embeds: [updatedProcessingEmbed] });
+        while (continueLoop) {
+            // อัปเดตข้อความแสดงสถานะ
+            const progressEmbed = new EmbedBuilder()
+                .setTitle("กำลังเปลี่ยนชื่อสมาชิก")
+                .setDescription(`กำลังดึงข้อมูลสมาชิกกลุ่มใหม่... ดำเนินการแล้ว ${totalProcessed} คน`)
+                .setColor(0x3498DB)
+                .setFooter({ text: "กรุณารอสักครู่..." })
+                .setTimestamp();
 
-        // ประมวลผลสมาชิกทีละคน
-        let processedCount = 0;
-        for (const memberId of membersWithRole) {
-            processedCount++;
+            await interaction.editReply({ embeds: [progressEmbed] });
 
-            // อัพเดตสถานะทุก 10 คน เพื่อแสดงความคืบหน้า
-            if (processedCount % 10 === 0 || processedCount === membersWithRole.length) {
-                const progressEmbed = EmbedBuilder.from(updatedProcessingEmbed)
-                    .setFooter({ text: `กำลังประมวลผล ${processedCount}/${membersWithRole.length} คน...` });
-                await interaction.editReply({ embeds: [progressEmbed] });
+            // ดึงสมาชิกครั้งละ 5 คน
+            const options = { limit: BATCH_SIZE };
+            if (lastId !== '0') {
+                options.after = lastId;
             }
 
-            try {
-                // ดึงสมาชิกทีละคนแทนที่จะดึงทั้งหมดพร้อมกัน
-                const member = await interaction.guild.members.fetch(memberId).catch(() => null);
-                if (!member) {
-                    noNameChange.push(memberId);
-                    continue;
+            const fetchedMembers = await interaction.guild.members.fetch(options);
+
+            if (fetchedMembers.size === 0) {
+                continueLoop = false;
+                continue;
+            }
+
+            // เก็บ ID สุดท้ายสำหรับการดึงข้อมูลครั้งถัดไป
+            lastId = fetchedMembers.last().id;
+
+            // กรองสมาชิกที่มีบทบาทตามที่ต้องการ
+            const batchMembersWithRole = [];
+            for (const [memberId, member] of fetchedMembers) {
+                if (member.roles.cache.has(targetRole.id)) {
+                    batchMembersWithRole.push({ id: memberId, member });
+                }
+            }
+
+            // ดำเนินการกับสมาชิกในกลุ่มนี้ทันที
+            for (const { id: memberId, member } of batchMembersWithRole) {
+                // อัปเดตข้อความแสดงความคืบหน้า
+                totalProcessed++;
+
+                if (totalProcessed % 5 === 0) {
+                    const statusEmbed = new EmbedBuilder()
+                        .setTitle("กำลังเปลี่ยนชื่อสมาชิก")
+                        .setDescription(`กำลังดำเนินการ... ดำเนินการแล้ว ${totalProcessed} คน`)
+                        .setColor(0x3498DB)
+                        .setFooter({ text: "กรุณารอสักครู่..." })
+                        .setTimestamp();
+
+                    await interaction.editReply({ embeds: [statusEmbed] });
                 }
 
-                // ตรวจสอบข้อมูลจาก API
                 try {
+                    // ตรวจสอบข้อมูลจาก API
                     const verifyUrl = `${ENV.verify.studentLink}${memberId}`;
+
                     const response = await axios.get(verifyUrl, {
                         headers: {
                             'Authorization': `${ENV.verify.authToken}`
@@ -117,11 +111,6 @@ module.exports = async (client, interaction) => {
                     }
 
                     // ถ้าพบข้อมูล ดำเนินการเปลี่ยนชื่อ
-                    if (!response.data.camper || !response.data.camper[0] || !response.data.camper[0].user) {
-                        noNameChange.push(memberId);
-                        continue;
-                    }
-
                     const userData = response.data.camper[0].user;
 
                     // ถ้ามีการตั้งชื่อตรงกับที่ควรจะเป็นอยู่แล้ว ให้ไม่ต้องเปลี่ยนชื่อ
@@ -130,28 +119,42 @@ module.exports = async (client, interaction) => {
                             noNameChange.push(memberId);
                             continue;
                         }
-                    } else {
-                        noNameChange.push(memberId);
-                        continue;
                     }
 
-                    // เปลี่ยนชื่อ
-                    const newNickname = `${userData.nickname} ${userData.firstName}`;
-                    try {
-                        await member.setNickname(newNickname);
-                        needsNameChange.push(memberId);
-                    } catch (nicknameError) {
-                        error(`Error setting nickname for user ${memberId}: ${nicknameError.message}`);
+                    if (userData && userData.nickname && userData.firstName) {
+                        const newNickname = `${userData.nickname} ${userData.firstName}`;
+
+                        // ถ้าชื่อไม่ตรงกับที่ควรจะเป็น ให้เปลี่ยนชื่อ
+                        if (member.nickname !== newNickname) {
+                            await member.setNickname(newNickname);
+                            needsNameChange.push(memberId);
+                        } else {
+                            noNameChange.push(memberId);
+                        }
+                    } else {
                         noNameChange.push(memberId);
                     }
-                } catch (apiError) {
-                    error(`API error for user ${memberId}: ${apiError.message}`);
+                } catch (err) {
+                    error(`Error changing name for user ${memberId}: ${err.message}`);
                     noNameChange.push(memberId);
                 }
-            } catch (memberError) {
-                error(`Error processing member ${memberId}: ${memberError.message}`);
-                noNameChange.push(memberId);
             }
+
+            // ถ้าดึงมาน้อยกว่าที่ตั้งไว้ แสดงว่าหมดแล้ว
+            if (fetchedMembers.size < BATCH_SIZE) {
+                continueLoop = false;
+            }
+        }
+
+        if (needsNameChange.length === 0 && noNameChange.length === 0) {
+            const noMembersEmbed = new EmbedBuilder()
+                .setTitle("ไม่พบสมาชิก")
+                .setDescription(`ไม่พบสมาชิกที่มีบทบาท ${targetRole}`)
+                .setColor(0xE74C3C)
+                .setFooter({ text: "ไม่สามารถดำเนินการได้" })
+                .setTimestamp();
+
+            return interaction.editReply({ embeds: [noMembersEmbed] });
         }
 
         // สร้าง embed สำหรับรายงานผล
