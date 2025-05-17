@@ -38,7 +38,7 @@ module.exports = async (client, interaction) => {
         const noNameChange = [];
 
         // ดึงข้อมูลสมาชิกเป็นกลุ่มๆ ละ 5 คน และเปลี่ยนชื่อทันที
-        const BATCH_SIZE = 5;
+        const BATCH_SIZE = 10;
         let lastId = '0';
         let continueLoop = true;
         let totalProcessed = 0;
@@ -115,6 +115,7 @@ module.exports = async (client, interaction) => {
 
                     // ถ้ามีการตั้งชื่อตรงกับที่ควรจะเป็นอยู่แล้ว ให้ไม่ต้องเปลี่ยนชื่อ
                     if (userData && userData.nickname && userData.firstName) {
+                        info(`Check : ${member.nickname} ${userData.nickname} ${userData.firstName}`);
                         if (member.nickname === `${userData.nickname} ${userData.firstName}`) {
                             noNameChange.push(memberId);
                             continue;
