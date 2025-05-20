@@ -67,14 +67,14 @@ module.exports = new Event({
 
         // จัดการกับ slash commands
         if (interaction.isChatInputCommand()) {
-            const command = interaction.client.commands.get(interaction.commandName);
+            const command = client.collection.application_commands.get(interaction.commandName);
             if (!command) {
                 console.error(`No command matching ${interaction.commandName} was found.`);
                 return;
             }
 
             try {
-                await command.execute(interaction, client);
+                await command.run(interaction, client);
             } catch (error) {
                 console.error(error);
                 if (interaction.replied || interaction.deferred) {
