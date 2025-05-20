@@ -65,24 +65,6 @@ module.exports = new Event({
             }
         }
 
-        // จัดการกับ slash commands
-        if (interaction.isChatInputCommand()) {
-            const command = client.collection.application_commands.get(interaction.commandName);
-            if (!command) {
-                console.error(`No command matching ${interaction.commandName} was found.`);
-                return;
-            }
-
-            try {
-                await command.run(interaction, client);
-            } catch (error) {
-                console.error(error);
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'มีข้อผิดพลาดในการประมวลคำสั่งนี้!', ephemeral: true });
-                } else {
-                    await interaction.reply({ content: 'มีข้อผิดพลาดในการประมวลคำสั่งนี้!', ephemeral: true });
-                }
-            }
-        }
+        // ส่วนจัดการกับ slash commands ถูกลบออกแล้ว เพื่อป้องกันการทำงานซ้ำซ้อนกับ CommandsListener.js
     }
 }).toJSON(); 
