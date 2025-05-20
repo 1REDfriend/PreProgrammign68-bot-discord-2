@@ -28,7 +28,7 @@ module.exports = new Component({
                     ephemeral: true
                 });
             }
-            
+
             // ดึงข้อความในตั๋ว
             const messages = await prisma.messageLog.findMany({
                 where: { ticket_id },
@@ -48,10 +48,10 @@ module.exports = new Component({
                 .setColor(ticket.status === 'open' ? 0x00FF00 : 0xFF0000);
 
             if (ticket.closed_at) {
-                ticketEmbed.addFields({ 
-                    name: 'ปิดเมื่อ', 
-                    value: `<t:${Math.floor(ticket.closed_at.getTime() / 1000)}:F>`, 
-                    inline: true 
+                ticketEmbed.addFields({
+                    name: 'ปิดเมื่อ',
+                    value: `<t:${Math.floor(ticket.closed_at.getTime() / 1000)}:F>`,
+                    inline: true
                 });
             }
 
@@ -61,9 +61,9 @@ module.exports = new Component({
                 const avatarURL = fetchedUser ? fetchedUser.displayAvatarURL({ dynamic: true, size: 128 }) : null;
 
                 return new EmbedBuilder()
-                    .setAuthor({ 
-                        name: msg.username, 
-                        iconURL: avatarURL || undefined 
+                    .setAuthor({
+                        name: msg.username,
+                        iconURL: avatarURL || undefined
                     })
                     .setDescription(msg.content || "ไม่มีข้อความ")
                     .setFooter({ text: `ส่งเมื่อ ${new Date(msg.created_at).toLocaleString("th-TH")}` })
@@ -72,14 +72,14 @@ module.exports = new Component({
 
             // สร้างปุ่มต่างๆ
             const components = [];
-            
+
             // ปุ่มย้อนกลับไปหน้ารายการตั๋ว
             const backButton = new ButtonBuilder()
                 .setCustomId('back-to-ticket-list')
                 .setLabel('กลับไปหน้ารายการตั๋ว')
                 .setStyle(ButtonStyle.Secondary)
                 .setEmoji('⬅️');
-            
+
             // ถ้าตั๋วปิดแล้ว เพิ่มปุ่มเปิดอีกครั้ง
             if (ticket.status === 'closed') {
                 const reopenButton = new ButtonBuilder()
@@ -87,7 +87,7 @@ module.exports = new Component({
                     .setLabel('เปิดตั๋วอีกครั้ง')
                     .setStyle(ButtonStyle.Success)
                     .setEmoji('🔓');
-                
+
                 components.push(new ActionRowBuilder().addComponents(backButton, reopenButton));
             } else {
                 components.push(new ActionRowBuilder().addComponents(backButton));
@@ -100,7 +100,7 @@ module.exports = new Component({
                 components: components,
                 ephemeral: true
             });
-            
+
         } catch (err) {
             console.error(`Error handling view-ticket: ${err}`);
             await interaction.update({

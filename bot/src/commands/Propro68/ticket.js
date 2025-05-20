@@ -109,7 +109,7 @@ module.exports = new ApplicationCommand({
      * @param {ChatInputCommandInteraction} interaction 
      */
     run: async (client, interaction) => {
-        const subcommand = interaction.options.getSubcommand();
+        const subcommand = interaction.options?.getSubcommand();
 
         if (subcommand === 'setup') {
             return setupHandler(client, interaction);

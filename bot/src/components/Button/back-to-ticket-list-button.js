@@ -1,4 +1,4 @@
-const { ButtonInteraction, StringSelectMenuBuilder, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { ButtonInteraction } = require("discord.js");
 const DiscordBot = require("../../client/DiscordBot");
 const Component = require("../../structure/Component");
 const { PrismaClient } = require("@prisma/client");
@@ -31,7 +31,8 @@ module.exports = new Component({
                 });
             }
 
-            const ticketOptions = await Promise.all(tickets.map(async ticket => {
+            // สร้างตัวเลือกทั้งหมด
+            const allTicketOptions = await Promise.all(tickets.map(async ticket => {
                 const fetchedUser = await client.users.fetch(ticket.user_id).catch(() => null);
                 const username = fetchedUser ? fetchedUser.username : 'ผู้ใช้ที่ไม่รู้จัก';
 
@@ -43,40 +44,35 @@ module.exports = new Component({
                 };
             }));
 
-            const embed = new EmbedBuilder()
-                .setTitle("ตั๋วที่มีอยู่")
-                .setDescription("เลือกตั๋วจากรายการด้านล่าง:")
-                .setColor(0x0099FF);
+            // สร้าง collection หากไม่มี
+            const userId = interaction.user.id;
+            client.ticketsPageData = client.ticketsPageData || new Map();
 
-            const selectMenu = new StringSelectMenuBuilder()
-                .setCustomId('view-ticket')
-                .setPlaceholder('เลือกตั๋ว')
-                .addOptions(ticketOptions);
+            // เก็บข้อมูลทั้งหมดสำหรับการแบ่งหน้า
+            const pageSize = 25; // จำนวนรายการต่อหน้า
+            const pageData = {
+                options: allTicketOptions,
+                currentPage: 0,
+                pageSize: pageSize,
+                totalPages: Math.ceil(allTicketOptions.length / pageSize),
+                filter: 'all' // ค่าเริ่มต้นแสดงทั้งหมด
+            };
 
-            const filterButtons = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('filter-open')
-                    .setLabel('แสดงที่เปิดอยู่')
-                    .setStyle(ButtonStyle.Success)
-                    .setEmoji('🟢'),
-                new ButtonBuilder()
-                    .setCustomId('filter-closed')
-                    .setLabel('แสดงที่ปิดแล้ว')
-                    .setStyle(ButtonStyle.Danger)
-                    .setEmoji('🔴'),
-                new ButtonBuilder()
-                    .setCustomId('filter-all')
-                    .setLabel('แสดงทั้งหมด')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('📋')
-            );
+            // บันทึกข้อมูลสำหรับผู้ใช้คนนี้
+            client.ticketsPageData.set(userId, pageData);
 
-            await interaction.update({
-                content: null,
-                embeds: [embed],
-                components: [new ActionRowBuilder().addComponents(selectMenu), filterButtons],
-                ephemeral: true
-            });
+            // เรียกใช้ฟังก์ชัน displayTicketPage จาก find.js
+            const findTicketsHandler = require('../../commands/Propro68/Tickets/find');
+            if (typeof findTicketsHandler.displayTicketPage === 'function') {
+                await findTicketsHandler.displayTicketPage(interaction, pageData);
+            } else {
+                console.error('Error: displayTicketPage function not found in find.js');
+                await interaction.update({
+                    content: `เกิดข้อผิดพลาด: ไม่พบฟังก์ชันแสดงรายการตั๋ว`,
+                    components: [],
+                    ephemeral: true
+                });
+            }
         } catch (err) {
             console.error(`Error handling back-to-ticket-list: ${err}`);
             await interaction.update({
