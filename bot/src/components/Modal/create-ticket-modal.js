@@ -2,9 +2,12 @@ const { ModalSubmitInteraction, EmbedBuilder, ButtonStyle, PermissionsBitField, 
 const DiscordBot = require("../../client/DiscordBot")
 const Component = require("../../structure/Component")
 const { error, info } = require("../../utils/Console")
-const { PrismaClient } = require("@prisma/client")
-const prisma = new PrismaClient()
+const { prisma } = require("../../utils/Database")
 
+/**
+ * @param {DiscordBot} client
+ * @param {import("discord.js").Interaction} interaction
+ */
 module.exports = new Component({
     customId: 'create_ticket',
     type: 'modal',
@@ -59,7 +62,12 @@ module.exports = new Component({
                         guild_id: interaction.guildId
                     },
                 })
-                const e = new EmbedBuilder().setTitle(title).setDescription(description).setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.avatarURL() }).setTimestamp()
+                const e = new EmbedBuilder()
+                    .setTitle(title)
+                    .setDescription(description)
+                    .setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.displayAvatarURL() })
+                    .setFooter({ text: `ชื่อผู้ใช้: ${interaction.user.username}` })
+                    .setTimestamp()
                 const btn = new ButtonBuilder().setCustomId('close-ticket').setLabel('ปิดตั๋ว').setStyle(ButtonStyle.Danger)
                 await channel.send({ embeds: [e], components: [new ActionRowBuilder().addComponents(btn)] })
 
@@ -70,7 +78,7 @@ module.exports = new Component({
                         const notificationEmbed = new EmbedBuilder()
                             .setTitle('มีการสร้าง Ticket ใหม่')
                             .setColor(0x00AE86)
-                            .setDescription(`**หัวข้อ:** ${title}\n**รายละเอียด:** ${description || 'ไม่มีรายละเอียด'}\n**ผู้สร้าง:** ${interaction.user.displayName}\n**ช่อง:** <#${channel.id}>`)
+                            .setDescription(`**หัวข้อ:** ${title}\n**รายละเอียด:** ${description || 'ไม่มีรายละเอียด'}\n**ผู้สร้าง:** <@${interaction.user.id}>\n**ช่อง:** <#${channel.id}>`)
                             .setTimestamp()
                             .setFooter({ text: `Ticket ID: ${channel.name}` })
 

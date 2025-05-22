@@ -1,10 +1,8 @@
 const { ModalSubmitInteraction, PermissionsBitField, ChannelType } = require("discord.js");
-const { PrismaClient } = require("@prisma/client");
 const DiscordBot = require("../../client/DiscordBot");
 const Component = require("../../structure/Component");
 const { error, info } = require("../../utils/Console");
-
-const prisma = new PrismaClient();
+const { prisma } = require("../../utils/Database");
 
 module.exports = new Component({
     customId: 'create_private_room_users_modal',

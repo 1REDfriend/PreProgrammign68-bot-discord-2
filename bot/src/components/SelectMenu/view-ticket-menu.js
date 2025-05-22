@@ -1,8 +1,7 @@
-const { PrismaClient } = require("@prisma/client");
 const DiscordBot = require("../../client/DiscordBot");
 const Component = require("../../structure/Component");
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-const prisma = new PrismaClient();
+const { prisma } = require("../../utils/Database");
 
 module.exports = new Component({
     customId: 'view-ticket',

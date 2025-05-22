@@ -1,10 +1,9 @@
 const { VoiceState } = require("discord.js");
-const { PrismaClient } = require("@prisma/client");
+const { prisma } = require("../../utils/Database");
 const DiscordBot = require("../../client/DiscordBot");
 const { info, error } = require("../../utils/Console");
 const Event = require("../../structure/Event");
 
-const prisma = new PrismaClient();
 
 module.exports = new Event({
     event: "voiceStateUpdate",

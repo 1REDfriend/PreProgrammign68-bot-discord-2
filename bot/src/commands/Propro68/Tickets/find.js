@@ -1,7 +1,6 @@
 const { ChatInputCommandInteraction, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionsBitField } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient()
+const { prisma } = require("../../../utils/Database");
 
 /**
  * แสดงรายการตั๋วตามหน้าที่กำหนด

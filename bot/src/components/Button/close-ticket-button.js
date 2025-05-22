@@ -2,8 +2,7 @@ const { ButtonInteraction } = require("discord.js");
 const DiscordBot = require("../../client/DiscordBot");
 const Component = require("../../structure/Component");
 const { error, info } = require("../../utils/Console");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient()
+const { prisma } = require("../../utils/Database");
 
 module.exports = new Component({
     customId: 'close-ticket',

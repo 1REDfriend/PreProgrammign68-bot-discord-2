@@ -1,8 +1,7 @@
-const { PrismaClient } = require("@prisma/client")
+const { prisma } = require("../../utils/Database")
 const Event = require("../../structure/Event")
 const { error } = require("../../utils/Console")
 const DiscordBot = require("../../client/DiscordBot")
-const prisma = new PrismaClient()
 
 module.exports = new Event({
     event: 'ready',

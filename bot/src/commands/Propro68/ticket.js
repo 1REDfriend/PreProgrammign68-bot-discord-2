@@ -4,9 +4,9 @@ const ApplicationCommand = require("../../structure/ApplicationCommand");
 
 const setupHandler = require("./Tickets/setup");
 const findHandler = require("./Tickets/find");
+const askCloseHandler = require("./Tickets/ask");
 const uninstallHandler = require("./Tickets/uninstall");
 const notificationHandler = require("./Tickets/notification");
-
 module.exports = new ApplicationCommand({
     command: {
         name: 'ticket',
@@ -86,6 +86,12 @@ module.exports = new ApplicationCommand({
                 ]
             },
             {
+                name: 'ask-close',
+                description: 'ถามว่าจะปิดตั๋วหรือไม่',
+                type: ApplicationCommandOptionType.Subcommand,
+                options: []
+            },
+            {
                 name: 'uninstall',
                 description: 'ลบข้อมูลการตั้งค่า Ticket สำหรับเซิร์ฟเวอร์นี้',
                 type: ApplicationCommandOptionType.Subcommand,
@@ -115,6 +121,8 @@ module.exports = new ApplicationCommand({
             return setupHandler(client, interaction);
         } else if (subcommand === 'find') {
             return findHandler(client, interaction);
+        } else if (subcommand === 'ask-close') {
+            return askCloseHandler(client, interaction);
         } else if (subcommand === 'uninstall') {
             return uninstallHandler(client, interaction);
         } else if (subcommand === 'notification') {

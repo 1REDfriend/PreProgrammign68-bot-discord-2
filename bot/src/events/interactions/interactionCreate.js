@@ -7,7 +7,7 @@ module.exports = new Event({
     once: false,
     run: async (__client__, interaction) => {
         const client = __client__;
-        
+
         // จัดการกับปุ่มสำหรับระบบแบ่งหน้าตั๋ว
         if (interaction.isButton()) {
             if (interaction.customId === 'next-page' || interaction.customId === 'prev-page' ||

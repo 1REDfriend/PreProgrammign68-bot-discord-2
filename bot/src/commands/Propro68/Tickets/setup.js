@@ -1,8 +1,7 @@
 const { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ChannelType, ChatInputCommandInteraction, PermissionsBitField } = require("discord.js");
 const DiscordBot = require("../../../client/DiscordBot");
 const { info } = require("../../../utils/Console");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient()
+const { prisma } = require("../../../utils/Database");
 
 /**
  * Subcommand handler for ticket setup
