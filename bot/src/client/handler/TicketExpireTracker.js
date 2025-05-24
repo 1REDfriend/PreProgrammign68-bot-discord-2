@@ -10,7 +10,7 @@ class TicketExpireTracker {
      */
     constructor(client) {
         this.client = client;
-        this.interval = 1000 * 10;
+        this.interval = 1000 * 60 * 1;
         this.checkInterval = null;
         this.isRunning = false;
 
