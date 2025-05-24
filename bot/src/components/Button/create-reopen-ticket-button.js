@@ -80,6 +80,16 @@ module.exports = new Component({
                 });
             }
 
+            await prisma.ticketLog.update({
+                where: {
+                    ticket_id: ticketId
+                },
+                data: {
+                    warn_expire: false,
+                    expire_in: ticketConfig.expire_time ? Date.now() + ticketConfig.expire_time : null
+                }
+            });
+
             try {
                 // สร้างช่องใหม่
                 const newChannel = await guild.channels.create({
@@ -94,7 +104,7 @@ module.exports = new Component({
                         {
                             id: ticketLog.user_id, // ผู้สร้างตั๋วดั้งเดิม
                             allow: [
-                                PermissionsBitField.Flags.ViewChannel, 
+                                PermissionsBitField.Flags.ViewChannel,
                                 PermissionsBitField.Flags.SendMessages,
                                 PermissionsBitField.Flags.ReadMessageHistory
                             ],
@@ -102,16 +112,16 @@ module.exports = new Component({
                         {
                             id: ticketConfig.role_id, // บทบาทแอดมิน/ทีมงาน
                             allow: [
-                                PermissionsBitField.Flags.ViewChannel, 
-                                PermissionsBitField.Flags.SendMessages, 
+                                PermissionsBitField.Flags.ViewChannel,
+                                PermissionsBitField.Flags.SendMessages,
                                 PermissionsBitField.Flags.ReadMessageHistory
                             ],
                         },
                         {
                             id: interaction.user.id, // ผู้เปิดตั๋วใหม่ (ในกรณีที่ไม่ใช่คนเดิม)
                             allow: [
-                                PermissionsBitField.Flags.ViewChannel, 
-                                PermissionsBitField.Flags.SendMessages, 
+                                PermissionsBitField.Flags.ViewChannel,
+                                PermissionsBitField.Flags.SendMessages,
                                 PermissionsBitField.Flags.ReadMessageHistory
                             ],
                         }
@@ -163,31 +173,31 @@ module.exports = new Component({
                         .setTitle("ประวัติการสนทนาจากตั๋วเดิม")
                         .setDescription(`ตั๋วนี้เคยถูกปิดเมื่อ <t:${Math.floor(new Date(ticketLog.closed_at).getTime() / 1000)}:F>`)
                         .setColor(0x0099FF);
-                    
+
                     await newChannel.send({ embeds: [ticketInfoEmbed] });
-                    
+
                     // แบ่งข้อความเก่าเป็นชุด ชุดละไม่เกิน 10 ข้อความเพื่อไม่ให้ส่งมากจนเกินไป
                     const chunkSize = 10;
                     for (let i = 0; i < messageLogs.length; i += chunkSize) {
                         const messagesChunk = messageLogs.slice(i, i + chunkSize);
-                        
+
                         // แปลงข้อความเก่าให้เป็นรูปแบบที่อ่านง่าย
                         let formattedMessages = '';
                         for (const msg of messagesChunk) {
                             const time = new Date(msg.created_at).toLocaleString('th-TH');
                             formattedMessages += `**${msg.username}** (${time}):\n${msg.content || '(ไม่มีข้อความ)'}\n\n`;
                         }
-                        
+
                         // ส่งข้อความเก่า
                         if (formattedMessages) {
                             const embed = new EmbedBuilder()
                                 .setDescription(formattedMessages)
                                 .setColor(0xE0E0E0);
-                            
+
                             await newChannel.send({ embeds: [embed] });
                         }
                     }
-                    
+
                     // เพิ่มเส้นแบ่งระหว่างข้อความเก่ากับข้อความใหม่
                     await newChannel.send({
                         content: "----------------------------\n## การสนทนาใหม่เริ่มที่นี่"
@@ -200,7 +210,7 @@ module.exports = new Component({
                     const row = client.buttonComponent.createRow([closeButton]);
 
                     await newChannel.send({
-                        content: `<@${ticketLog.user_id}> ตั๋วของคุณถูกเปิดใหม่แล้ว`,
+                        content: `<@${ticketLog.user_id}> ตั๋วของคุณถูกเปิดใหม่แล้ว และจะหมดอายุใน ${ticketConfig.expire_time ? `<t:${Math.floor((Date.now() + ticketConfig.expire_time)/ 1000)}:R>` : 'ไม่มีการตั้งค่า'}`,
                         components: [row]
                     });
 

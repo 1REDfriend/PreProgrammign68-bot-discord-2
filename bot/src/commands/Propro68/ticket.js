@@ -7,6 +7,8 @@ const findHandler = require("./Tickets/find");
 const askCloseHandler = require("./Tickets/ask");
 const uninstallHandler = require("./Tickets/uninstall");
 const notificationHandler = require("./Tickets/notification");
+const expireHandler = require("./Tickets/expire");
+
 module.exports = new ApplicationCommand({
     command: {
         name: 'ticket',
@@ -103,6 +105,19 @@ module.exports = new ApplicationCommand({
                         required: true
                     },
                 ]
+            },
+            {
+                name: 'expire',
+                description: 'ตั้งค่าหมดอายุของตั๋ว',
+                type: ApplicationCommandOptionType.Subcommand,
+                options: [
+                    {
+                        name: 'time',
+                        description: 'เวลาหมดอายุของตั๋ว หน่วยเป็นนาที',
+                        type: ApplicationCommandOptionType.Number,
+                        required: true
+                    }
+                ]
             }
         ]
     },
@@ -127,6 +142,9 @@ module.exports = new ApplicationCommand({
             return uninstallHandler(client, interaction);
         } else if (subcommand === 'notification') {
             return notificationHandler(client, interaction);
+        } else if (subcommand === 'expire') {
+            const time = interaction.options.getNumber('time');
+            return expireHandler(client, interaction, time);
         } else {
             return interaction.reply({
                 content: "Invalid subcommand.",

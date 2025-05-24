@@ -12,6 +12,7 @@ const EventsHandler = require("./handler/EventsHandler");
 const TrackUserListener = require("./handler/TrackUserListener");
 const MemberApprovalHandler = require("./handler/MemberApprovalHandler");
 const MemberApprovalListener = require("./handler/MemberApprovalListener");
+const TicketExpireTracker = require("./handler/TicketExpireTracker");
 
 class DiscordBot extends Client {
     collection = {
@@ -127,6 +128,7 @@ class DiscordBot extends Client {
         new ComponentsListener(this);
         new TrackUserListener(this);
         new MemberApprovalListener(this);
+        new TicketExpireTracker(this);
     }
 
     startStatusRotation = () => {

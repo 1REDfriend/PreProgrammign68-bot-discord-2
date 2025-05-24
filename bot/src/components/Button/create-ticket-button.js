@@ -21,7 +21,7 @@ module.exports = new Component({
             .setCustomId('create_ticket-field-1')
             .setLabel('หัวข้อ')
             .setStyle(TextInputStyle.Short)
-            .setPlaceholder('กรอกข้อความที่คุณต้องการแสดงอะไรก็ได้')
+            .setPlaceholder('กรอกข้อความหัวข้อเรื่อง')
             .setRequired(true)
             .setMaxLength(255)
             .setMinLength(2);
@@ -30,8 +30,9 @@ module.exports = new Component({
             .setCustomId('create_ticket-field-2')
             .setLabel('คำอธิบายหัวข้อ')
             .setStyle(TextInputStyle.Paragraph)
-            .setPlaceholder('กรอกข้อความที่คุณต้องการแสดงอะไรก็ได้')
-            .setRequired(false)
+            .setPlaceholder('กรอกข้อความอธิบายเรื่องที่เกิดขึ้นสั้นๆ')
+            .setRequired(true)
+            .setMinLength(2)
             .setMaxLength(255);
 
         const actionRow1 = new ActionRowBuilder().addComponents(messageField);

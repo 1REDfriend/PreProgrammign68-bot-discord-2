@@ -59,14 +59,20 @@ module.exports = new Component({
                         channel_id: channel.id,
                         status: 'OPEN',
                         created_at: new Date(),
-                        guild_id: interaction.guildId
+                        guild_id: interaction.guildId,
+                        expire_in: ticket.expire_time ? (Date.now() + ticket.expire_time) : null
                     },
                 })
                 const e = new EmbedBuilder()
                     .setTitle(title)
                     .setDescription(description)
                     .setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.displayAvatarURL() })
-                    .setFooter({ text: `ชื่อผู้ใช้: ${interaction.user.username}` })
+                    .addFields(
+                        { name: 'ชื่อผู้ใช้', value: `<@${interaction.user.id}>`, inline: true },
+                        { name: 'ไอดี', value: interaction.user.id, inline: true },
+                        { name: 'หมดอายุใน', value: `${ticket.expire_time ? `<t:${Math.floor((Date.now() + ticket.expire_time)/ 1000)}:R>` : 'ไม่มีการตั้งค่า'}`, inline: true },
+                    )
+                    .setFooter({ text: `ชื่อผู้ใช้: ${interaction.user.displayName}` })
                     .setTimestamp()
                 const btn = new ButtonBuilder().setCustomId('close-ticket').setLabel('ปิดตั๋ว').setStyle(ButtonStyle.Danger)
                 await channel.send({ embeds: [e], components: [new ActionRowBuilder().addComponents(btn)] })
