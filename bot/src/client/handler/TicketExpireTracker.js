@@ -109,7 +109,7 @@ class TicketExpireTracker {
                         } catch (err) {
                             error(`Fail to delete a channel by expire time err: ${err}`);
                         }
-                    } else if (ticket.expire_time && log.expire_in < Date.now() + 1000 * 60 * 60 * 1) {
+                    } else if (ticket.expire_time && log.expire_in < Date.now() + 1000 * 60 * 60 * 3) {
                         if (!log.warn_expire) {
                             await prisma.ticketLog.update({
                                 where: {
