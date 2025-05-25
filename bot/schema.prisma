@@ -20,7 +20,7 @@ model Ticket {
     category_id String?
     role_id     String
     channel_id  String 
-    expire_time BigInt? @default(0)
+    expire_time Int? @default(0)
     notification_channel_id String?
     notification_role_id String?
 

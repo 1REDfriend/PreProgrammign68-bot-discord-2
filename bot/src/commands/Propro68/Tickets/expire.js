@@ -21,7 +21,7 @@ async function expireTicket(client, interaction, expireTime) {
         ephemeral: true
     });
 
-    if (expireTime > Number.MAX_VALUE) return interaction.reply({
+    if (expireTime > Number.MAX_SAFE_INTEGER) return interaction.reply({
         content: "เวลาที่กำหนดมีค่ามากเกินไป",
         ephemeral: true
     });
